@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { BrandMark } from './src/components/BrandMark';
 import { PrimaryButton, SurfaceCard } from './src/components/common';
 import { palette } from './src/constants/theme';
