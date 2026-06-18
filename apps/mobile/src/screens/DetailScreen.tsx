@@ -23,7 +23,7 @@ function prettyBlockType(value: string) {
     house_focus: 'life area with extra emphasis',
     major_aspect: 'strong inner pattern',
     planet_emphasis: 'planetary teaching point',
-    jungian_trigger: 'psychological growth pattern',
+    jungian_trigger: 'optional Jungian pattern',
     imaginal_prompt: 'reflective prompt',
     synastry_natal_frame: "one person's natal frame in the bond",
     synastry_yearly_bridge: 'how the two current years meet',
@@ -35,6 +35,18 @@ function prettyBlockType(value: string) {
     synastry_core_bond: 'core emotional bond',
     synastry_prompt: 'relationship reflection prompt',
     transit_current: 'current live influence',
+  }[value] || value.replace(/_/g, ' ');
+}
+
+function prettySourceLayer(value: string) {
+  return {
+    traditional_core: 'Traditional core',
+    traditional_timing: 'Traditional timing',
+    relationship_synthesis: 'Relationship synthesis',
+    current_sky: 'Current sky',
+    modern_psychology: 'Optional Jungian overlay',
+    modern_reflection: 'Optional reflective overlay',
+    app_synthesis: 'App synthesis',
   }[value] || value.replace(/_/g, ' ');
 }
 
@@ -54,7 +66,7 @@ function realLifeExample(block: InterpretationBlock) {
     house_focus: 'This may look like one life area becoming a repeated classroom, where the same lesson keeps coming back in different forms.',
     major_aspect: 'This may look like two parts of you pulling in different directions until you learn how to hold both at once.',
     planet_emphasis: 'This may look like a specific habit, strength, or stress pattern showing up in a very recognizable way in daily life.',
-    jungian_trigger: 'This may look like repeating emotional reactions, familiar conflicts, or strong projections that keep asking for reflection.',
+    jungian_trigger: 'This belongs to the optional Jungian overlay. It may look like repeating emotional reactions, familiar conflicts, or recurring mirrors that keep asking for reflection.',
     imaginal_prompt: 'This may look like a dream image, journal theme, or repeating symbol that keeps returning until you slow down and notice it.',
     synastry_natal_frame: 'This may look like one person entering the relationship through a very live life chapter, such as home, career, partnership, or family pressure already being active before any specific interaction happens.',
     synastry_yearly_bridge: 'This may look like the relationship feeling intense, easy, or mismatched partly because each person is carrying a different year-lord story at the same time.',
@@ -64,7 +76,7 @@ function realLifeExample(block: InterpretationBlock) {
     synastry_aspect: 'This may look like one repeated interaction pattern between two people showing up in conversations, conflict, attraction, or support.',
     synastry_attraction: 'This may look like how the relationship handles chemistry, desire, pursuit, pacing, and mutual interest.',
     synastry_core_bond: 'This may look like the way two people care for each other emotionally, or miss each other emotionally, over and over.',
-    synastry_prompt: 'This may look like journaling what each person brings out emotionally, symbolically, or psychologically in the other.',
+    synastry_prompt: 'This may look like journaling what each person brings out in the other through the relationship, without confusing reflection with literal chart structure.',
     transit_current: 'This may look like a theme suddenly feeling louder, more urgent, or more emotionally charged than usual for a while.',
   };
   return examples[block.block_type] || 'This may show up as a repeated habit, pressure point, or life theme that becomes easier to notice once you know what to look for.';
@@ -116,7 +128,7 @@ export function DetailScreen({ block, onBack }: { block: InterpretationBlock; on
         </SurfaceCard>
       ) : null}
 
-      <SurfaceCard title="What it may look like in life" subtitle="Use this as a bridge between symbolic language and everyday experience.">
+      <SurfaceCard title="What it may look like in life" subtitle="Use this as a bridge between chart language and everyday experience.">
         <GlossaryText text={useInLife} textStyle={styles.summary} />
       </SurfaceCard>
 
@@ -142,6 +154,7 @@ export function DetailScreen({ block, onBack }: { block: InterpretationBlock; on
                 <Text style={styles.evidenceText}>{item.rule}</Text>
                 <Text style={styles.evidenceLabel}>Interpretation</Text>
                 <Text style={styles.evidenceText}>{item.interpretation}</Text>
+                <Text style={styles.evidenceMeta}>Source layer: {prettySourceLayer(item.source_layer)}</Text>
                 <Text style={styles.evidenceMeta}>Effect on confidence: {item.confidence_effect}</Text>
                 {item.caveat ? <Text style={styles.evidenceCaveat}>Caveat: {item.caveat}</Text> : null}
               </View>

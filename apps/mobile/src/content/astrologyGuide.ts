@@ -8,7 +8,7 @@ export const astrologyGuideSections: GuideSection[] = [
   {
     title: 'What astrology means in The Ark',
     paragraphs: [
-      'The Ark treats astrology as a symbolic and historical interpretive framework, not as a scientifically proven diagnostic science. It starts with astronomical positions — date, time, place, and angular relationships — and then interprets those patterns through a traditional chart-reading method.',
+      'The Ark treats astrology as a traditional rule-based interpretive discipline, not as a scientifically proven diagnostic science. It starts with astronomical positions — date, time, place, and angular relationships — and then interprets those patterns through a traditional chart-reading method.',
       'In practical terms, the app is asking: What was the sky map at birth? Which parts of the chart repeat the same testimony? What life topics do those chart factors govern? And what is active in the sky now as a supplemental timing layer?'
     ]
   },
@@ -22,7 +22,7 @@ export const astrologyGuideSections: GuideSection[] = [
       'Traditional core: whole-sign houses, seven visible planets, house topics, major aspects, and chart structure',
       'Traditional expansion path: sect, house rulers, planetary condition, Lots of Fortune and Spirit, and repeated testimony',
       'Optional modern overlay: Jungian interpretation and other psychology-oriented language',
-      'Optional reflective overlay: journaling, imaginal prompts, and symbolic noticing'
+      'Optional reflective overlay: journaling and imaginal prompts that do not override the chart structure'
     ]
   },
   {
@@ -36,7 +36,7 @@ export const astrologyGuideSections: GuideSection[] = [
     title: 'How The Ark builds a chart',
     paragraphs: [
       'The app calculates a chart from birth date, birth time, UTC offset, latitude, and longitude. If place information is incomplete, it can try to resolve it from city, country, and date context. If birth time is not exact, the app switches into a simpler mode instead of pretending the full chart is equally certain.',
-      'The Ark currently uses Whole Sign houses as its house system. It calculates the seven visible planets it focuses on most directly: Sun, Moon, Mercury, Venus, Mars, Jupiter, and Saturn. It also uses the Ascendant and Midheaven when birth-time accuracy allows them, and it is being expanded to expose more of the traditional judgment stack directly.'
+      'The Ark currently uses Whole Sign houses as its house system. It calculates the seven visible planets it focuses on most directly: Sun, Moon, Mercury, Venus, Mars, Jupiter, and Saturn. It also uses the Ascendant and Midheaven when birth-time accuracy allows them.'
     ],
     bullets: [
       'Exact birth time = fuller chart with houses, angles, and more precise timing',
@@ -62,7 +62,7 @@ export const astrologyGuideSections: GuideSection[] = [
     title: 'The planets: what each one means here',
     bullets: [
       'Sun: identity, purpose, leadership, recognition. The app treats this as the core self and life direction.',
-      'Moon: emotion, body, memory, attachment. The app treats this as emotional style, habit, and felt safety.',
+      'Moon: body, mood, memory, habit. The app treats this as emotional style, reactivity, and felt safety.',
       'Mercury: language, analysis, communication, learning. This shows how the mind links things and explains them.',
       'Venus: affection, value, intimacy, taste. This describes attraction, value, reciprocity, and what feels beautiful or worthwhile.',
       'Mars: assertion, anger, courage, desire. This shows drive, friction, boundary-setting, and direct action.',
@@ -96,13 +96,13 @@ export const astrologyGuideSections: GuideSection[] = [
       'In The Ark, houses answer the question: what part of life is this most likely to show up in?'
     ],
     bullets: [
-      '1st House: identity, presence, self-presentation',
+      '1st House: body, presence, character, self-presentation',
       '2nd House: money, possessions, livelihood, support',
       '3rd House: siblings, messages, local travel, study',
       '4th House: home, parents, land, roots',
       '5th House: joy, romance, creativity, performance',
       '6th House: labor, illness, service, repair',
-      '7th House: committed relationships, contracts, mirroring',
+      '7th House: marriage, contracts, committed partnerships, open opponents',
       '8th House: inheritance, fear, debt, other people’s resources',
       '9th House: belief, long travel, higher study, worldview',
       '10th House: career, status, calling',
@@ -138,7 +138,7 @@ export const astrologyGuideSections: GuideSection[] = [
   {
     title: 'Relationship readings',
     paragraphs: [
-      'A relationship reading compares two charts. The Ark is not trying to give a shallow compatibility score. It is looking for repeated patterns of attraction, support, friction, projection, rhythm, and emotional bonding between two people.',
+      'A relationship reading compares two charts. The Ark is not trying to give a shallow compatibility score. It is looking for repeated patterns of attraction, support, friction, alliance, conduct, and emotional bond between two people.',
       'That is why the app increasingly uses the phrase relationship reading instead of only using the technical word synastry. The goal is to teach what the pattern does, not only what astrologers call it.'
     ]
   },
@@ -177,13 +177,13 @@ export const astrologyGuideSections: GuideSection[] = [
       'Open the guide when you need definitions, context, or a slower explanation.',
       'Treat one or two repeated themes as more important than trying to memorize every sentence.',
       'If the birth time is uncertain, trust the simpler parts of the reading more than the timed details.',
-      'Use the detail screens to connect symbolic language to real-life behavior, choices, and relationships.'
+      'Use the detail screens to connect chart language to real-life behavior, choices, and relationships.'
     ]
   },
   {
     title: 'What this guide is built from',
     paragraphs: [
-      'This guide is based on The Ark project itself: the repo README, the API README, the chart engine, aspect policy, profile resolution logic, house-system settings, and the internal ontology files for planets, signs, houses, aspects, Jungian mappings, Lévi currents, planetary rites, and transit thresholds.',
+      'This guide is based on The Ark project itself: the repo README, the API README, the chart engine, aspect policy, profile resolution logic, house-system settings, and the internal ontology files for planets, signs, houses, aspects, transit thresholds, and the optional overlay files such as Jungian mappings and Lévi currents.',
       'In other words, this guide is describing the actual app you are using, not a generic outside astrology summary pasted in from somewhere else.'
     ]
   }

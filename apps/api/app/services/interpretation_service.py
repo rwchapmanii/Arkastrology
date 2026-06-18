@@ -309,10 +309,17 @@ class NatalInterpretationService:
         caveat: Optional[str] = None,
         source_layer: str = "traditional_core",
     ) -> EvidenceItem:
+        combined = f"{observation} {rule}".lower()
+        resolved_source_layer = source_layer
+        if source_layer == "traditional_core":
+            if any(token in combined for token in ["annual profection", "solar return", "year lord", "profection year"]):
+                resolved_source_layer = "traditional_timing"
+            elif any(token in combined for token in ["transit", "current sky", "moving sky"]):
+                resolved_source_layer = "current_sky"
         return EvidenceItem(
             observation=observation,
             rule=rule,
-            source_layer=source_layer,
+            source_layer=resolved_source_layer,
             interpretation=interpretation,
             confidence_effect=cls._confidence_effect_from_score(score),
             caveat=caveat,

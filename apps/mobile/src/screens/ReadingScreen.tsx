@@ -142,7 +142,6 @@ function buildOpeningSummary(result: AnyReadingResponse, strongest?: TopicJudgme
       paragraphs: [
         result.reading.practical_meaning,
         result.reading.life_translation,
-        result.reading.psychological_meaning,
         result.reading.guidance,
       ].filter(Boolean),
       testimony: null as string | null,

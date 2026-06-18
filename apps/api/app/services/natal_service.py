@@ -84,7 +84,7 @@ class NatalReadingService:
         interpretation_blocks = []
         notes = [
             f"Birth time precision received as: {request.profile.time_precision}.",
-            "Astrology is treated here as a symbolic interpretive framework, not a scientifically proven diagnostic system.",
+            "Astrology is treated here as a traditional interpretive discipline, not as a scientifically proven diagnostic system.",
             "The Ark is being re-based on a traditional source-grounded doctrine: chart structure first, optional modern overlays second.",
             "Ontology ingestion is live from structured JSON inside The Ark repository.",
         ]

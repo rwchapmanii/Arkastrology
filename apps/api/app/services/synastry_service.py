@@ -254,12 +254,21 @@ class SynastryReadingService:
         interpretation: str,
         score: int,
         caveat: Optional[str] = None,
-        source_layer: str = "traditional_core",
+        source_layer: str = "relationship_synthesis",
     ) -> EvidenceItem:
+        combined = f"{observation} {rule}".lower()
+        resolved_source_layer = source_layer
+        if source_layer == "relationship_synthesis":
+            if any(token in combined for token in ["annual profection", "solar return", "year lord", "profection year"]):
+                resolved_source_layer = "traditional_timing"
+            elif any(token in combined for token in ["fortune", "spirit", "sect", "house ruler", "domicile ruler"]):
+                resolved_source_layer = "traditional_core"
+            elif any(token in combined for token in ["transit", "current sky", "moving sky"]):
+                resolved_source_layer = "current_sky"
         return EvidenceItem(
             observation=observation,
             rule=rule,
-            source_layer=source_layer,
+            source_layer=resolved_source_layer,
             interpretation=interpretation,
             confidence_effect=cls._confidence_effect_from_score(score),
             caveat=caveat,
@@ -2012,7 +2021,7 @@ class SynastryReadingService:
         source_lenses = cls._build_source_lenses(request)
         notes: List[str] = [
             "Synastry compares two natal structures and then looks for strong cross-chart contacts.",
-            "Astrology is treated here as a symbolic interpretive framework, not a scientifically proven diagnostic system.",
+            "Astrology is treated here as a traditional interpretive discipline, not as a scientifically proven diagnostic system.",
             "The Ark is being re-based on a traditional source-grounded doctrine: natal structure first, optional modern overlays second.",
             "Ontology ingestion is live from structured JSON inside The Ark repository.",
         ]
@@ -2046,7 +2055,7 @@ class SynastryReadingService:
             practical_meaning="The API can resolve both birth contexts and compare two charts once sufficient inputs are present.",
             life_translation="The Ark treats synastry as natal structure first, cross-chart contact second, and optional modern overlays after that.",
             guidance="Provide accurate birth context for both people so the relational prediction layer becomes specific.",
-            prompt="What is truly happening between the two people, and what is being carried by symbol, wish, or projection?",
+            prompt="What is truly happening between the two people, and what belongs to chart structure rather than wish or projection?",
             oracle="The Ark is waiting for enough context to name the bond's live current.",
         )
 

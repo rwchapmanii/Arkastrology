@@ -76,14 +76,16 @@ function sanitizeBlock(block: InterpretationBlock): InterpretationBlock {
 }
 
 export function sanitizeReadingResponse(result: AnyReadingResponse): AnyReadingResponse {
+  const sanitizedPsychological = cleanString(result.reading.psychological_meaning) || result.reading.psychological_meaning;
+  const sanitizedLifeTranslation = cleanString(result.reading.life_translation) || result.reading.life_translation || sanitizedPsychological;
   return {
     ...result,
     reading: {
       ...result.reading,
       headline: cleanString(result.reading.headline) || result.reading.headline,
       practical_meaning: cleanString(result.reading.practical_meaning) || result.reading.practical_meaning,
-      life_translation: cleanString(result.reading.life_translation) || result.reading.life_translation,
-      psychological_meaning: cleanString(result.reading.psychological_meaning) || result.reading.psychological_meaning,
+      life_translation: sanitizedLifeTranslation,
+      psychological_meaning: sanitizedPsychological,
       guidance: cleanString(result.reading.guidance) || result.reading.guidance,
       prompt: cleanString(result.reading.prompt),
       timing_focus: cleanString(result.reading.timing_focus),
