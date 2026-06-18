@@ -1,0 +1,7 @@
+[
+  {"id":"conjunction","display_name":"Conjunction","glyph":"☌","geometry_degrees":0,"aspect_family":"unification","default_harmony_tension":"potent","default_intensity":"highest","jungian_archetypal_links":["psychic_concentration"],"source_lens_tags":["tetrabiblos_aspect_relation","jung_psychic_concentration"]},
+  {"id":"sextile","display_name":"Sextile","glyph":"⚹","geometry_degrees":60,"aspect_family":"supportive_opportunity","default_harmony_tension":"harmonious","default_intensity":"moderate","jungian_archetypal_links":["cooperative_integration"],"source_lens_tags":["tetrabiblos_aspect_relation","jung_cooperative_integration"]},
+  {"id":"square","display_name":"Square","glyph":"□","geometry_degrees":90,"aspect_family":"friction","default_harmony_tension":"tense","default_intensity":"strong","jungian_archetypal_links":["tension_of_opposites"],"source_lens_tags":["tetrabiblos_aspect_relation","jung_tension_of_opposites"]},
+  {"id":"trine","display_name":"Trine","glyph":"△","geometry_degrees":120,"aspect_family":"natural_harmony","default_harmony_tension":"harmonious","default_intensity":"moderate_to_strong","jungian_archetypal_links":["integrated_function"],"source_lens_tags":["tetrabiblos_aspect_relation","jung_integrated_function"]},
+  {"id":"opposition","display_name":"Opposition","glyph":"☍","geometry_degrees":180,"aspect_family":"polarity","default_harmony_tension":"tense_polar","default_intensity":"strong","jungian_archetypal_links":["projection_axis"],"source_lens_tags":["tetrabiblos_aspect_relation","jung_projection_axis"]}
+]

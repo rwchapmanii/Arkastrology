@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: the-ark-api
+    env: python
+    rootDir: apps/api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ARK_STATE_DIR
+        value: /var/data/ark-state
+      - key: ALLOWED_ORIGINS
+        value: https://www.arkastrology.app,https://arkastrology.app
+      - key: ALLOWED_ORIGIN_REGEX
+        value: https://.*\\.vercel\\.app
+      - key: EMAIL_DELIVERY_MODE
+        value: smtp
+      - key: EMAIL_FROM_NAME
+        value: The Ark
+      - key: EMAIL_FROM_ADDRESS
+        value: support@arkastrology.app
+      - key: EMAIL_SUPPORT_ADDRESS
+        value: support@arkastrology.app
+      - key: EMAIL_DEBUG_EXPOSE_TOKENS
+        value: false
+    disk:
+      name: ark-state
+      mountPath: /var/data
+      sizeGB: 1

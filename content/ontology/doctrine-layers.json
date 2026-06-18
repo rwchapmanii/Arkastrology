@@ -1,0 +1,47 @@
+[
+  {
+    "collection": "planets",
+    "layer": "traditional_core",
+    "notes": "Seven visible planets, sect affinities, and classical topics."
+  },
+  {
+    "collection": "signs",
+    "layer": "traditional_core",
+    "notes": "Sign qualities, rulers, and classical associations."
+  },
+  {
+    "collection": "houses",
+    "layer": "traditional_core",
+    "notes": "Whole-sign house topics and angularity framing."
+  },
+  {
+    "collection": "aspects",
+    "layer": "traditional_core",
+    "notes": "Major aspects used in the current traditional frame."
+  },
+  {
+    "collection": "citations",
+    "layer": "shared_reference",
+    "notes": "Source labels spanning traditional, app, and optional modern layers."
+  },
+  {
+    "collection": "jungian_mappings",
+    "layer": "modern_overlay",
+    "notes": "Optional psychological overlay only."
+  },
+  {
+    "collection": "levi_currents",
+    "layer": "app_synthesis",
+    "notes": "App-specific symbolic correspondence layer; never primary doctrine."
+  },
+  {
+    "collection": "planetary_rites",
+    "layer": "app_synthesis",
+    "notes": "App-authored ritual and reflection layer."
+  },
+  {
+    "collection": "transit_thresholds",
+    "layer": "app_synthesis",
+    "notes": "App timing heuristics for current-sky summaries."
+  }
+]

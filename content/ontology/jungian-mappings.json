@@ -1,0 +1,86 @@
+[
+  {
+    "mapping_id": "saturn_venus_7th",
+    "mapping_type": "astrology_to_jungian",
+    "astrological_trigger": "Saturn conjunct Venus in or activating the 7th house",
+    "classical_tags": ["relationship_testing", "delay", "seriousness"],
+    "jungian_core_tags": ["projection_collapse", "maturation_of_love"],
+    "red_book_tags": ["inner_dialogue", "withholding_beloved"],
+    "archetype_labels": ["lover", "senex"],
+    "shadow_labels": ["defensive_coldness", "idealization_breakdown"],
+    "developmental_task": "Build durable reciprocity without bitterness.",
+    "source_lens_tags": ["jung", "red_book"]
+  },
+  {
+    "mapping_id": "mars_moon_square",
+    "mapping_type": "astrology_to_jungian",
+    "astrological_trigger": "Mars square Moon",
+    "classical_tags": ["conflict", "pressure", "volatility"],
+    "jungian_core_tags": ["reactive_complex", "protection_vs_assertion"],
+    "red_book_tags": ["besieged_house", "armored_guardian"],
+    "archetype_labels": ["warrior", "mother_field"],
+    "shadow_labels": ["attack_as_defense", "injury_memory"],
+    "developmental_task": "Differentiate present conflict from inherited emotional activation.",
+    "source_lens_tags": ["jung", "red_book"]
+  },
+  {
+    "mapping_id": "sun_saturn_opposition",
+    "mapping_type": "astrology_to_jungian",
+    "astrological_trigger": "Sun opposite Saturn",
+    "classical_tags": ["burden", "inhibition", "authority_pressure"],
+    "jungian_core_tags": ["ego_confronted_by_law", "reality_principle"],
+    "red_book_tags": ["judge_figure", "stone_gate"],
+    "archetype_labels": ["sovereign", "senex"],
+    "shadow_labels": ["shame_rigidity", "collapse_under_judgment"],
+    "developmental_task": "Build a center that can bear limit without fragmentation.",
+    "source_lens_tags": ["jung", "red_book"]
+  },
+  {
+    "mapping_id": "mercury_saturn_conjunction",
+    "mapping_type": "astrology_to_jungian",
+    "astrological_trigger": "Mercury conjunct Saturn",
+    "classical_tags": ["severity", "careful speech", "study", "constraint"],
+    "jungian_core_tags": ["inner_critic", "logos_under_discipline"],
+    "red_book_tags": ["scribe_in_the_tower", "sealed_message"],
+    "archetype_labels": ["scribe", "senex"],
+    "shadow_labels": ["self-censorship", "frozen speech"],
+    "developmental_task": "Turn inhibition into exact thought instead of silence or harshness.",
+    "source_lens_tags": ["jung", "red_book"]
+  },
+  {
+    "mapping_id": "venus_mars_opposition",
+    "mapping_type": "astrology_to_jungian",
+    "astrological_trigger": "Venus opposite Mars",
+    "classical_tags": ["desire", "polarization", "attraction", "conflict"],
+    "jungian_core_tags": ["anima_animus_tension", "erotic_polarity"],
+    "red_book_tags": ["red_and_white_pair", "sacred_quarrel"],
+    "archetype_labels": ["lover", "warrior"],
+    "shadow_labels": ["pursuit_withdrawal_loop", "passion_without_covenant"],
+    "developmental_task": "Hold attraction and conflict together without letting either become the whole story.",
+    "source_lens_tags": ["jung", "red_book"]
+  },
+  {
+    "mapping_id": "moon_jupiter_trine",
+    "mapping_type": "astrology_to_jungian",
+    "astrological_trigger": "Moon trine Jupiter",
+    "classical_tags": ["protection", "faith", "warmth", "emotional expansion"],
+    "jungian_core_tags": ["benevolent_containing_image", "trust_in_meaning"],
+    "red_book_tags": ["wise_mother", "house_of_bread"],
+    "archetype_labels": ["great_mother", "guide"],
+    "shadow_labels": ["sentimental_excess", "inflated_reassurance"],
+    "developmental_task": "Let trust become grounded generosity instead of diffuse comfort.",
+    "source_lens_tags": ["jung", "red_book"]
+  },
+  {
+    "mapping_id": "mars_saturn_conjunction",
+    "mapping_type": "astrology_to_jungian",
+    "astrological_trigger": "Mars conjunct Saturn",
+    "classical_tags": ["pressure", "frustration", "discipline", "endurance"],
+    "jungian_core_tags": ["will_under_constraint", "shadow_tempering"],
+    "red_book_tags": ["armored_gate", "iron_pilgrim"],
+    "archetype_labels": ["warrior", "senex"],
+    "shadow_labels": ["resentment", "force_hardened_against_itself"],
+    "developmental_task": "Convert blocked force into disciplined, exact action.",
+    "source_lens_tags": ["jung", "red_book"]
+  }
+]

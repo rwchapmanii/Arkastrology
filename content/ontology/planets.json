@@ -1,0 +1,86 @@
+[
+  {
+    "id": "sun",
+    "display_name": "Sun",
+    "glyph": "☉",
+    "category": "luminary",
+    "classical_nature": ["center", "vitality", "illumination", "authority"],
+    "benefic_malefic_tendency": "constructive",
+    "sect_affinity": "diurnal",
+    "core_topics": ["identity", "purpose", "leadership", "recognition"],
+    "jungian_archetypal_links": ["sovereign", "center"],
+    "source_lens_tags": ["tetrabiblos_planetary_quality", "jung_center_identity"]
+  },
+  {
+    "id": "moon",
+    "display_name": "Moon",
+    "glyph": "☾",
+    "category": "luminary",
+    "classical_nature": ["changeability", "receptivity", "nourishment", "habit"],
+    "benefic_malefic_tendency": "adaptive",
+    "sect_affinity": "nocturnal",
+    "core_topics": ["emotion", "body", "memory", "attachment"],
+    "jungian_archetypal_links": ["mother_matrix", "receptive_psyche"],
+    "source_lens_tags": ["tetrabiblos_luminary_condition", "jung_mother_matrix"]
+  },
+  {
+    "id": "mercury",
+    "display_name": "Mercury",
+    "glyph": "☿",
+    "category": "planet",
+    "classical_nature": ["speech", "thought", "trade", "mediation"],
+    "benefic_malefic_tendency": "variable",
+    "sect_affinity": "variable",
+    "core_topics": ["language", "analysis", "communication", "learning"],
+    "jungian_archetypal_links": ["trickster", "messenger", "mediator"],
+    "source_lens_tags": ["tetrabiblos_mercurial_nature", "jung_trickster_mediator"]
+  },
+  {
+    "id": "venus",
+    "display_name": "Venus",
+    "glyph": "♀",
+    "category": "planet",
+    "classical_nature": ["union", "pleasure", "beauty", "harmony"],
+    "benefic_malefic_tendency": "benefic",
+    "sect_affinity": "nocturnal",
+    "core_topics": ["affection", "value", "intimacy", "taste"],
+    "jungian_archetypal_links": ["lover", "eros"],
+    "source_lens_tags": ["tetrabiblos_benefic_nature", "jung_eros_projection"]
+  },
+  {
+    "id": "mars",
+    "display_name": "Mars",
+    "glyph": "♂",
+    "category": "planet",
+    "classical_nature": ["force", "conflict", "heat", "severing"],
+    "benefic_malefic_tendency": "malefic",
+    "sect_affinity": "nocturnal",
+    "core_topics": ["assertion", "anger", "courage", "desire"],
+    "jungian_archetypal_links": ["warrior", "challenger"],
+    "source_lens_tags": ["tetrabiblos_malefic_nature", "jung_warrior_shadow"]
+  },
+  {
+    "id": "jupiter",
+    "display_name": "Jupiter",
+    "glyph": "♃",
+    "category": "planet",
+    "classical_nature": ["growth", "meaning", "blessing", "law"],
+    "benefic_malefic_tendency": "benefic",
+    "sect_affinity": "diurnal",
+    "core_topics": ["belief", "opportunity", "teaching", "expansion"],
+    "jungian_archetypal_links": ["sage", "guide"],
+    "source_lens_tags": ["tetrabiblos_benefic_expansion", "jung_sage_meaning"]
+  },
+  {
+    "id": "saturn",
+    "display_name": "Saturn",
+    "glyph": "♄",
+    "category": "planet",
+    "classical_nature": ["limit", "time", "burden", "structure"],
+    "benefic_malefic_tendency": "malefic",
+    "sect_affinity": "diurnal",
+    "core_topics": ["duty", "discipline", "limits", "endurance"],
+    "jungian_archetypal_links": ["senex", "reality_principle"],
+    "source_lens_tags": ["tetrabiblos_saturnine_nature", "jung_senex_reality"]
+  }
+]

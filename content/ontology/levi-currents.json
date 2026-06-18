@@ -1,0 +1,110 @@
+[
+  {
+    "id": "equilibrium_of_will",
+    "display_name": "Equilibrium of Will",
+    "themes": ["discipline", "measured force", "ethical power", "containment"],
+    "trigger_signs": ["Libra", "Capricorn", "Leo"],
+    "trigger_houses": [1, 7, 10],
+    "trigger_planets": ["Sun", "Saturn"],
+    "trigger_aspects": ["Opposition", "Square", "Conjunction"],
+    "narrative": "Power becomes trustworthy when force is proportioned, vows are kept, and pressure is converted into form rather than drama.",
+    "prediction_focus": "leadership tests, contracts, reputation, durable commitments",
+    "ritual_actions": [
+      "Name one vow worth keeping for the next month.",
+      "Choose the slower durable action over the flashy one.",
+      "Tighten one boundary that leaks authority or time."
+    ],
+    "shadow_watch": ["rigidity", "punitive control", "burnout through over-responsibility"],
+    "source_lens_tags": ["levi_equilibrium", "levi_initiation", "levi_will_and_imagination"]
+  },
+  {
+    "id": "astral_light_of_memory",
+    "display_name": "Astral Light of Memory",
+    "themes": ["dream life", "symbolic atmosphere", "sensitivity", "memory"],
+    "trigger_signs": ["Cancer", "Scorpio", "Pisces"],
+    "trigger_houses": [4, 8, 12],
+    "trigger_planets": ["Moon", "Venus"],
+    "trigger_aspects": ["Conjunction", "Opposition", "Trine"],
+    "narrative": "The psyche becomes most legible through images, dreams, moods, and charged atmospheres before it becomes legible through plain argument.",
+    "prediction_focus": "emotional revelations, dream material, private healing, hidden motives",
+    "ritual_actions": [
+      "Write down the first dream fragment you remember for seven mornings.",
+      "Notice which rooms, songs, or people change the atmosphere instantly.",
+      "Give one buried feeling a clean symbolic form in writing."
+    ],
+    "shadow_watch": ["confusion", "projection", "being swept by atmosphere instead of discerning it"],
+    "source_lens_tags": ["levi_astral_light", "levi_symbolic_correspondence"]
+  },
+  {
+    "id": "chain_of_correspondence",
+    "display_name": "Chain of Correspondence",
+    "themes": ["analogy", "study", "signal-reading", "intelligence"],
+    "trigger_signs": ["Gemini", "Virgo", "Aquarius"],
+    "trigger_houses": [3, 9, 11],
+    "trigger_planets": ["Mercury", "Jupiter"],
+    "trigger_aspects": ["Sextile", "Trine", "Conjunction"],
+    "narrative": "Meaning arrives by pattern, comparison, and correspondence: one thing illuminates another when the mind learns to read relation instead of isolated fact.",
+    "prediction_focus": "study breakthroughs, messages, writing, alliances, teaching",
+    "ritual_actions": [
+      "Track three repeating symbols or phrases this week.",
+      "Turn one confusing event into a written pattern map.",
+      "Teach or explain what you are learning to someone else."
+    ],
+    "shadow_watch": ["over-interpretation", "scattered attention", "mistaking cleverness for truth"],
+    "source_lens_tags": ["levi_symbolic_correspondence", "levi_universal_analogy"]
+  },
+  {
+    "id": "initiatory_fire",
+    "display_name": "Initiatory Fire",
+    "themes": ["courage", "thresholds", "ordeal", "creative risk"],
+    "trigger_signs": ["Aries", "Leo", "Sagittarius"],
+    "trigger_houses": [1, 5, 9],
+    "trigger_planets": ["Sun", "Mars", "Jupiter"],
+    "trigger_aspects": ["Conjunction", "Trine", "Square"],
+    "narrative": "A threshold is crossed through tested action: the self becomes more real by taking up the right difficulty voluntarily.",
+    "prediction_focus": "launches, declarations, creative exposure, travel, belief-testing",
+    "ritual_actions": [
+      "Do the visible brave thing you have been postponing.",
+      "Let the body register commitment through one concrete action.",
+      "Trade performative certainty for embodied courage."
+    ],
+    "shadow_watch": ["impulsiveness", "ego inflation", "conflict for its own sake"],
+    "source_lens_tags": ["levi_initiation", "levi_equilibrium", "levi_initiatory_trial"]
+  },
+  {
+    "id": "magnetic_vessel",
+    "display_name": "Magnetic Vessel",
+    "themes": ["containment", "devotion", "magnetism", "form-giving"],
+    "trigger_signs": ["Taurus", "Cancer", "Libra"],
+    "trigger_houses": [2, 4, 7],
+    "trigger_planets": ["Moon", "Venus", "Saturn"],
+    "trigger_aspects": ["Conjunction", "Sextile", "Opposition"],
+    "narrative": "Power gathers when the vessel is prepared: atmosphere, beauty, and vow shape the field that attraction can safely inhabit.",
+    "prediction_focus": "partnership definition, home aesthetics, embodied value, emotional contracts",
+    "ritual_actions": [
+      "Refine one room, agreement, or practice so it can hold more life.",
+      "Ask whether attraction is being given a trustworthy container.",
+      "Consecrate one daily act with steadiness rather than intensity."
+    ],
+    "shadow_watch": ["possessiveness", "emotional inertia", "beauty masking avoidance"],
+    "source_lens_tags": ["levi_astral_light", "levi_equilibrium", "levi_will_and_imagination"]
+  },
+  {
+    "id": "double_current_of_revelation",
+    "display_name": "Double Current of Revelation",
+    "themes": ["duality", "mirroring", "discernment", "reversal"],
+    "trigger_signs": ["Gemini", "Virgo", "Scorpio", "Aquarius"],
+    "trigger_houses": [3, 8, 11, 12],
+    "trigger_planets": ["Mercury", "Moon", "Saturn"],
+    "trigger_aspects": ["Opposition", "Square", "Sextile"],
+    "narrative": "Truth arrives in crossed currents: one thing is said, another is shown, and discernment is forged by comparing the two without collapsing them.",
+    "prediction_focus": "hard conversations, symbolic reversals, hidden motives, pattern recognition",
+    "ritual_actions": [
+      "Write the literal story and the symbolic story side by side.",
+      "Notice what repeats across dream, dialogue, and circumstance.",
+      "Delay final judgment until the second signal appears."
+    ],
+    "shadow_watch": ["paranoia", "over-reading omens", "cynical detachment"],
+    "source_lens_tags": ["levi_universal_analogy", "levi_astral_light", "levi_initiatory_trial"]
+  }
+]

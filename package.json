@@ -1,0 +1,14 @@
+{
+  "name": "jung-tetrabiblos-astrology-app",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "mobile": "npm --workspace apps/mobile run start",
+    "api": "cd apps/api && python3 -m uvicorn app.main:app --reload",
+    "typecheck": "npm --workspace apps/mobile run typecheck"
+  }
+}

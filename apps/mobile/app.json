@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "The Ark",
+    "slug": "the-ark",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.chapman.theark"
+    },
+    "android": {
+      "package": "com.chapman.theark"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
+}

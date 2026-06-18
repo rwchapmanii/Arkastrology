@@ -1,0 +1,100 @@
+[
+  {
+    "planet": "Sun",
+    "display_name": "Solar Rite of Sovereignty",
+    "levi_frame": "Will becomes trustworthy when it enters form instead of spectacle.",
+    "jung_frame": "The ego is asked to serve vocation rather than vanity.",
+    "omens": ["visibility", "authority", "recognition", "creative authorship"],
+    "rituals": [
+      "State the one responsibility that is truly yours this week.",
+      "Choose a visible act that matches your deeper standard.",
+      "Cut one performance habit that leaks force."
+    ],
+    "cautions": ["ego inflation", "false certainty", "performative leadership"],
+    "source_lens_tags": ["levi_will_and_imagination", "jung_center_identity"]
+  },
+  {
+    "planet": "Moon",
+    "display_name": "Lunar Rite of Atmosphere",
+    "levi_frame": "The astral field speaks first through mood, image, and atmosphere.",
+    "jung_frame": "Feeling-toned complexes rise before they are understood.",
+    "omens": ["memory", "body signals", "belonging", "domestic tides"],
+    "rituals": [
+      "Name the mood before you narrate the story.",
+      "Record one dream fragment or recurring image.",
+      "Protect one nourishing rhythm instead of bargaining it away."
+    ],
+    "cautions": ["projection", "emotional flooding", "treating atmosphere as proof"],
+    "source_lens_tags": ["levi_astral_light", "jung_complex_activation"]
+  },
+  {
+    "planet": "Mercury",
+    "display_name": "Mercurial Rite of Correspondence",
+    "levi_frame": "Analogy and pattern reveal the hidden relation between events.",
+    "jung_frame": "Meaning emerges when dialogue becomes conscious instead of automatic.",
+    "omens": ["messages", "writing", "study", "signal-reading"],
+    "rituals": [
+      "Map the repeating phrase, symbol, or conversation thread.",
+      "Write the thing you keep trying to say indirectly.",
+      "Turn confusion into a clean diagram or list."
+    ],
+    "cautions": ["scattered attention", "over-interpretation", "talk replacing contact"],
+    "source_lens_tags": ["levi_universal_analogy", "jung_active_imagination"]
+  },
+  {
+    "planet": "Venus",
+    "display_name": "Venusian Rite of Magnetism",
+    "levi_frame": "Attraction reveals the forms we are willing to consecrate.",
+    "jung_frame": "Value and projection travel together until consciously separated.",
+    "omens": ["attraction", "beauty", "affection", "value alignment"],
+    "rituals": [
+      "Name what is beautiful and what is merely seductive.",
+      "Practice one gesture of reciprocity without scorekeeping.",
+      "Refine the environment so it reflects your real values."
+    ],
+    "cautions": ["idealization", "people-pleasing", "mistaking charm for covenant"],
+    "source_lens_tags": ["levi_symbolic_correspondence", "jung_projection_mirror"]
+  },
+  {
+    "planet": "Mars",
+    "display_name": "Martial Rite of Threshold",
+    "levi_frame": "Fire initiates by ordeal: the will becomes real through action.",
+    "jung_frame": "Aggression matures when it becomes conscious courage instead of reaction.",
+    "omens": ["conflict", "drive", "sexual charge", "decision pressure"],
+    "rituals": [
+      "Take the clean direct action you have been postponing.",
+      "Move the body before arguing with the mood.",
+      "Name the boundary without theatrical escalation."
+    ],
+    "cautions": ["impulsiveness", "attack as defense", "forcing timing"],
+    "source_lens_tags": ["levi_initiatory_trial", "jung_shadow_integration"]
+  },
+  {
+    "planet": "Jupiter",
+    "display_name": "Jovian Rite of Expansion",
+    "levi_frame": "Increase is holy only when it remains proportional to truth.",
+    "jung_frame": "Meaning grows through a larger horizon, not just bigger appetite.",
+    "omens": ["teaching", "travel", "belief", "opportunity"],
+    "rituals": [
+      "Back the larger possibility with one disciplined commitment.",
+      "Teach or share what you are actually learning.",
+      "Let generosity be measurable, not vague."
+    ],
+    "cautions": ["overreach", "self-justifying optimism", "grandiosity"],
+    "source_lens_tags": ["levi_equilibrium", "jung_center_identity"]
+  },
+  {
+    "planet": "Saturn",
+    "display_name": "Saturnian Rite of Consecration",
+    "levi_frame": "Power is purified by limit, vow, and endurance.",
+    "jung_frame": "The senex demands form so that the psyche can bear reality.",
+    "omens": ["duty", "time", "contracts", "reputation"],
+    "rituals": [
+      "Write the vow, deadline, or boundary in plain language.",
+      "Choose the slower durable structure over the dramatic shortcut.",
+      "Keep one promise exactly as stated."
+    ],
+    "cautions": ["rigidity", "fear-based control", "burden without meaning"],
+    "source_lens_tags": ["levi_equilibrium", "jung_shadow_integration"]
+  }
+]

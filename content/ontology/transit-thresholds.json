@@ -1,0 +1,52 @@
+[
+  {
+    "aspect": "Conjunction",
+    "display_name": "Gate of Contact",
+    "levi_frame": "Forces join and intensify; what is latent demands embodiment.",
+    "jung_frame": "The complex arrives at the center and cannot stay abstract.",
+    "omens": ["activation", "compression", "threshold moment"],
+    "action": "Treat the pressure point as a summons to conscious action.",
+    "cautions": ["fusion", "over-identification"],
+    "source_lens_tags": ["levi_will_and_imagination", "jung_complex_activation"]
+  },
+  {
+    "aspect": "Sextile",
+    "display_name": "Gate of Opening",
+    "levi_frame": "Analogy creates a usable bridge between possibility and form.",
+    "jung_frame": "A workable dialogue opens between conscious intention and the deeper psyche.",
+    "omens": ["opportunity", "skillful adjustment", "conversation"],
+    "action": "Answer the invitation with a practical next move.",
+    "cautions": ["wasted opportunity", "talk without action"],
+    "source_lens_tags": ["levi_universal_analogy", "jung_active_imagination"]
+  },
+  {
+    "aspect": "Square",
+    "display_name": "Gate of Trial",
+    "levi_frame": "Initiation comes by ordeal; force must be disciplined rather than discharged blindly.",
+    "jung_frame": "Opposed drives demand tension-bearing instead of quick discharge.",
+    "omens": ["friction", "conflict", "demand for effort"],
+    "action": "Choose the exact point where disciplined effort changes the pattern.",
+    "cautions": ["reactivity", "escalation", "shadow acting-out"],
+    "source_lens_tags": ["levi_initiatory_trial", "jung_tension_of_opposites"]
+  },
+  {
+    "aspect": "Trine",
+    "display_name": "Gate of Flow",
+    "levi_frame": "Power moves with less resistance and asks for elegant stewardship.",
+    "jung_frame": "The psyche cooperates when the ego stops forcing what is already opening.",
+    "omens": ["ease", "coherence", "timely support"],
+    "action": "Let the easy path become fruitful through consistency.",
+    "cautions": ["coasting", "taking grace for granted"],
+    "source_lens_tags": ["levi_equilibrium", "jung_center_identity"]
+  },
+  {
+    "aspect": "Opposition",
+    "display_name": "Gate of Mirror",
+    "levi_frame": "The field shows its opposite pole so balance can be restored consciously.",
+    "jung_frame": "Projection becomes visible through the other or the outer event.",
+    "omens": ["mirroring", "negotiation", "revelation through encounter"],
+    "action": "Ask what the opposing image is trying to reveal, not just block.",
+    "cautions": ["projection", "splitting", "false antagonism"],
+    "source_lens_tags": ["levi_equilibrium", "jung_projection_mirror"]
+  }
+]
