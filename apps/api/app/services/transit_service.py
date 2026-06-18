@@ -523,7 +523,7 @@ class TransitForecastService:
                 title="What may matter most this week",
                 timeframe="This week",
                 summary=(
-                    f"The next few days keep returning to {secondary_contact.transit_body.lower()} themes because "
+                    f"The next few days keep returning to {secondary_contact.transit_body} matters because "
                     f"{cls._contact_narrative(secondary_contact, ontology).lower()}"
                 ),
                 opportunities=[
@@ -545,7 +545,7 @@ class TransitForecastService:
                 title="What to notice and learn from",
                 timeframe="Watch this threshold",
                 summary=(
-                    f"Keep a close eye on {lunar_contact.transit_body.lower()} material around {lunar_contact.natal_body.lower()} themes. "
+                    f"Keep a close eye on {lunar_contact.transit_body} material around {lunar_contact.natal_body}. "
                     f"{lunar_rite.get('jung_frame', 'The psyche is signaling through image before argument.')}"
                 ),
                 opportunities=[
@@ -666,7 +666,7 @@ class TransitForecastService:
                         f"{primary_profile.name} and {secondary_profile.name} each write one page on what this moment is asking for.",
                         "Read for image first, accusation second."
                     ] if include_red_book_prompts else [
-                        "Each person states one need and one boundary in plain language.",
+                        "Each person states one need and one boundary clearly.",
                         "Revisit the agreement in seven days."
                     ]
                 ),

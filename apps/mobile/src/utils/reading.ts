@@ -9,8 +9,16 @@ const TEXT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/constructive support rather than standing alone/gi, 'real support rather than being left to stand alone'],
   [/Tetrabiblos:\s*planetary quality/gi, 'Source note: classical planetary condition'],
   [/In plain language,\s*/gi, ''],
-  [/plain language/gi, 'direct terms'],
-  [/plain-English/gi, 'direct'],
+  [/\bin plain language\./gi, ' clearly.'],
+  [/\bin plain language\b/gi, ' clearly'],
+  [/plain language before/gi, 'clearly before'],
+  [/plain language/gi, 'clarity'],
+  [/plain-English/gi, 'clear'],
+  [/your asc themes/gi, 'your Ascendant, especially your outward style and first impression'],
+  [/your mercury themes/gi, 'your Mercury matters, especially thinking, speech, and decisions'],
+  [/moon themes/gi, 'Moon matters'],
+  [/asc themes/gi, 'Ascendant matters'],
+  [/mercury themes/gi, 'Mercury matters'],
 ];
 
 function cleanString(value?: string | null) {

@@ -1799,7 +1799,7 @@ class NatalInterpretationService:
                     ],
                     rituals=[
                         "Write down one supported move and one strain point for the same week.",
-                        "Name the recurring problem in plain language before trying to solve it symbolically.",
+                        "Name the recurring problem clearly before trying to solve it symbolically.",
                     ],
                     citations=sorted({
                         *strongest_topic.citations,
@@ -1837,7 +1837,7 @@ class NatalInterpretationService:
 
         first_summary = (
             f"For the next 30 days, the clearest focus is {dominant_house_title.lower()} matters: {dominant_topics}. "
-            f"In plain language, this is where life is asking for steady attention right now."
+            "This is where life is asking for steady attention right now."
         )
         if strongest_aspect:
             first_summary += f" The immediate weather is colored by {strongest_aspect.first} {strongest_aspect.type.lower()} {strongest_aspect.second}."

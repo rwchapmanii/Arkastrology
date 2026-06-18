@@ -40,6 +40,20 @@ function simpleAspectMeaning(type: string) {
   }
 }
 
+function bodyLabel(body: string) {
+  return {
+    Sun: 'Sun matters',
+    Moon: 'Moon matters',
+    Mercury: 'Mercury matters',
+    Venus: 'Venus matters',
+    Mars: 'Mars matters',
+    Jupiter: 'Jupiter matters',
+    Saturn: 'Saturn matters',
+    Asc: 'your Ascendant',
+    MC: 'your Midheaven',
+  }[body] || `${body} matters`;
+}
+
 function bodyTheme(body: string) {
   return {
     Sun: 'identity, purpose, and visibility',
@@ -62,7 +76,7 @@ function buildSkyNarrative(result: AnyReadingResponse, contacts: TransitAspectRe
   }
 
   const top = contacts[0];
-  const firstLine = `${top.transit_body} ${simpleAspectMeaning(top.type)} your ${top.natal_body.toLowerCase()} themes, especially around ${bodyTheme(top.natal_body)}.`;
+  const firstLine = `${top.transit_body} ${simpleAspectMeaning(top.type)} ${bodyLabel(top.natal_body)}, especially ${bodyTheme(top.natal_body)}.`;
 
   if (result.chart_type === 'synastry') {
     const owner = top.natal_owner === 'primary' ? 'Person A' : top.natal_owner === 'secondary' ? 'Person B' : 'the relationship';
@@ -70,14 +84,14 @@ function buildSkyNarrative(result: AnyReadingResponse, contacts: TransitAspectRe
     const firstParagraph = `Right now, the sky is leaning most strongly on ${owner}. ${firstLine} The relationship may feel more emotionally charged, revealing, or active in that area than usual.`;
     if (!second) return [firstParagraph];
     const secondOwner = second.natal_owner === 'primary' ? 'Person A' : second.natal_owner === 'secondary' ? 'Person B' : 'the relationship';
-    const secondParagraph = `${second.transit_body} ${simpleAspectMeaning(second.type)} ${secondOwner === 'the relationship' ? 'the relationship' : `${secondOwner.toLowerCase()}'s`} ${second.natal_body.toLowerCase()} themes as well, so both people may be feeling the moment in different but connected ways.`;
+    const secondParagraph = `${second.transit_body} ${simpleAspectMeaning(second.type)} ${secondOwner === 'the relationship' ? 'the relationship dynamic' : `${secondOwner.toLowerCase()}'s ${bodyLabel(second.natal_body)}`} as well, so both people may be feeling the moment in different but connected ways.`;
     return [firstParagraph, secondParagraph];
   }
 
   const second = contacts[1];
   const firstParagraph = `Right now, ${firstLine} This is the part of life most likely to feel louder, more immediate, or more emotionally charged than usual.`;
   if (!second) return [firstParagraph];
-  const secondParagraph = `${second.transit_body} ${simpleAspectMeaning(second.type)} your ${second.natal_body.toLowerCase()} themes as well, so the current sky is asking for awareness, patience, and a more conscious response in that part of your life.`;
+  const secondParagraph = `${second.transit_body} ${simpleAspectMeaning(second.type)} ${bodyLabel(second.natal_body)} as well, so the current sky is asking for awareness, patience, and a more conscious response in that part of your life.`;
   return [firstParagraph, secondParagraph];
 }
 

@@ -20,8 +20,8 @@ export function InterpretationCard({ block, onPress }: { block: InterpretationBl
         <View style={styles.textWrap}>
           <Text style={styles.title}>{block.title}</Text>
           {block.confidence ? <Text style={styles.confidence}>{confidenceLabel(block)}</Text> : null}
-          <Text style={styles.preview} numberOfLines={3}>{preview}</Text>
-          {supportingLine ? <Text style={styles.why} numberOfLines={2}>{supportingLine}</Text> : null}
+          <Text style={styles.preview}>{preview}</Text>
+          {supportingLine ? <Text style={styles.why}>{supportingLine}</Text> : null}
         </View>
       </View>
     </Pressable>

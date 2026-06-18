@@ -307,7 +307,7 @@ class SynastryReadingService:
             "partnership_agreements": (
                 "Name the actual agreement each person believes exists here.",
                 "Do not let chemistry stand in for commitment, terms, or clarity.",
-                "Write down one promise and one boundary in plain language.",
+                "Write down one promise and one boundary clearly.",
             ),
             "attraction_intimacy": (
                 "Talk about pace, desire, touch, and access before pressure builds.",
