@@ -275,6 +275,30 @@ class NatalInterpretationService:
             return "pressures"
         return "qualifies"
 
+    @staticmethod
+    def _confidence_explainer(label: Optional[str], classification: Optional[str] = None) -> Optional[str]:
+        if label == "high":
+            return "High confidence means several traditional factors point in the same direction."
+        if label == "medium":
+            if classification == "mixed":
+                return "Medium confidence here means the chart shows both support and friction, and several factors repeat that mixed picture."
+            return "Medium confidence means several factors point this way, but the testimony is not unanimous."
+        if label == "low":
+            return "Low confidence means the chart offers a clue, but the testimony is still thin or divided."
+        return None
+
+    @staticmethod
+    def _planet_topic_role(planet_name: str) -> str:
+        return {
+            "Sun": "identity, visibility, purpose, and public vitality",
+            "Moon": "habit, mood, embodiment, and daily responsiveness",
+            "Mercury": "thinking, speech, decisions, and interpretation",
+            "Venus": "attraction, ease, exchange, value, and relationship",
+            "Mars": "action, defense, pressure, urgency, and conflict",
+            "Jupiter": "growth, coherence, protection, belief, and increase",
+            "Saturn": "limits, duty, endurance, realism, and long-term consequence",
+        }.get(planet_name, "how this topic acts, responds, and carries its story")
+
     @classmethod
     def _evidence_item(
         cls,
@@ -445,7 +469,9 @@ class NatalInterpretationService:
                             f"{house_title} is ruled by {ruler.id}, placed in {ruler.sign} {cls._house_title_for_id(ontology, ruler.house)} with {cls._planet_condition_phrase(ruler)} condition."
                         ),
                         rule="Traditional topic judgment starts with the house ruler before isolated placements.",
-                        interpretation=f"{ruler.id} is the main carrier of this topic's ability to act coherently.",
+                        interpretation=(
+                            f"{ruler.id} rules this topic, so it describes {cls._planet_topic_role(ruler.id)}."
+                        ),
                         score=ruler_score,
                         caveat="A dignified ruler still needs witness and activation to produce consistent outcomes." if ruler_score > 0 else None,
                     )
@@ -811,20 +837,34 @@ class NatalInterpretationService:
         summary_bits = []
         if year_map.activated_house_title:
             summary_bits.append(
-                f"The current year map activates {year_map.activated_house_title}, centering {activated_topics}."
+                f"This year centers {year_map.activated_house_title}, so the main storyline keeps returning to {activated_topics}."
             )
         if year_map.lord_of_year:
             summary_bits.append(
-                f"{year_map.lord_of_year} carries the year from {cls._house_title_for_id(ontology, year_map.lord_of_year_house)}, where it is {year_map.lord_of_year_condition or 'mixed'}."
+                f"{year_map.lord_of_year} carries the year from {cls._house_title_for_id(ontology, year_map.lord_of_year_house)}, which shows where the yearly theme is most likely to become concrete."
             )
         if year_map.solar_return_ascendant:
             summary_bits.append(
-                f"The solar return rises in {year_map.solar_return_ascendant} and places the Sun in {cls._house_title_for_id(ontology, year_map.solar_return_sun_house)}."
+                f"The solar return rises in {year_map.solar_return_ascendant}, adding a yearly atmosphere around {cls._house_title_for_id(ontology, year_map.solar_return_sun_house)}."
             )
         if year_map.fortune_spirit_alignment == "aligned":
             summary_bits.append("Fortune and Spirit are aligned, so circumstance and intention are pointing in a similar direction.")
         elif year_map.fortune_spirit_alignment == "split":
-            summary_bits.append("Fortune and Spirit are split, so bodily circumstance and chosen direction should not be treated as the same story.")
+            summary_bits.append("Fortune and Spirit are split, so what life is demanding and what you most want to pursue may not be identical.")
+        plain_meaning = " ".join(summary_bits)
+        doctrine_bits = []
+        if year_map.activated_house_title:
+            doctrine_bits.append(
+                f"Annual profection activates {year_map.activated_house_title}, making that house and its ruler the main timing frame from one birthday to the next."
+            )
+        if year_map.solar_return_ascendant:
+            doctrine_bits.append(
+                "The solar return concentrates the profection year by showing how the storyline becomes more concrete in practice."
+            )
+        if year_map.fortune_spirit_alignment:
+            doctrine_bits.append(
+                "Fortune speaks to circumstance and embodiment, while Spirit speaks to chosen direction and intention."
+            )
         evidence_items = [
             cls._evidence_item(
                 observation=(
@@ -864,7 +904,8 @@ class NatalInterpretationService:
         return InterpretationBlock(
             block_type="year_map",
             title="Current year map",
-            summary=" ".join(summary_bits),
+            section_id="annual_profection",
+            summary=plain_meaning,
             citations=cls._resolve_labels([
                 "traditional_annual_profection",
                 "traditional_solar_return",
@@ -872,6 +913,28 @@ class NatalInterpretationService:
             ]),
             confidence="medium",
             evidence_items=evidence_items,
+            plain_meaning=plain_meaning,
+            traditional_doctrine=" ".join(doctrine_bits) if doctrine_bits else None,
+            chart_evidence=[
+                line for line in [
+                    f"Activated house: {year_map.activated_house_title}" if year_map.activated_house_title else None,
+                    f"Lord of the year: {year_map.lord_of_year} in {cls._house_title_for_id(ontology, year_map.lord_of_year_house)}" if year_map.lord_of_year else None,
+                    f"Solar return ascendant: {year_map.solar_return_ascendant}" if year_map.solar_return_ascendant else None,
+                    f"Fortune and Spirit: {year_map.fortune_spirit_alignment}" if year_map.fortune_spirit_alignment else None,
+                ] if line
+            ],
+            why_this_matters="This gives the main timing frame, so the rest of the reading should be understood as variations on this yearly pattern.",
+            confidence_explainer=cls._confidence_explainer("medium"),
+            technical_terms=["annual profection", "lord of the year", "solar return", "Fortune", "Spirit"],
+            source_tags=cls._resolve_labels([
+                "traditional_annual_profection",
+                "traditional_solar_return",
+                "traditional_fortune_spirit",
+            ]),
+            display_priority=30,
+            repeat_key=(
+                f"{year_map.activated_house_title or 'year'}_{year_map.lord_of_year or 'lord'}_{year_map.fortune_spirit_alignment or 'alignment'}"
+            ).lower().replace(" ", "_"),
         )
 
     @classmethod
@@ -883,21 +946,44 @@ class NatalInterpretationService:
         sect_light = cls._find_planet(chart_data, context.sect_light) if context.sect_light else None
         asc_house_meta = cls._house_meta(ontology, 1)
         sect_house_meta = cls._house_meta(ontology, cls._house_number(sect_light.house)) if sect_light and sect_light.house else {}
-        summary = (
-            f"This is a {context.sect} chart with {context.ascendant_sign} rising, so {context.ascendant_ruler} carries the first-house story of body, character, and basic direction. "
-            f"{context.ascendant_ruler} is {cls._planet_condition_phrase(asc_ruler)} in {asc_ruler.sign} {cls._title_from_house(cls._house_meta(ontology, cls._house_number(asc_ruler.house)), asc_ruler.house) if asc_ruler and asc_ruler.house else 'an unknown place'}. "
-            f"The sect light is the {context.sect_light}, which adds weight to {sect_light.sign if sect_light else 'its'} {cls._title_from_house(sect_house_meta, sect_light.house if sect_light else 'house')} themes."
+        plain_meaning = (
+            f"This chart begins with {context.ascendant_sign} rising in a {context.sect} chart, so {context.ascendant_ruler} becomes the main planet for how the person meets life, carries the body-level story, and sets basic direction. "
+            f"{context.ascendant_ruler} is placed in {asc_ruler.sign if asc_ruler else 'its sign'} {cls._title_from_house(cls._house_meta(ontology, cls._house_number(asc_ruler.house)), asc_ruler.house) if asc_ruler and asc_ruler.house else 'an unknown place'}, which shows where that foundational energy most naturally expresses itself."
+        )
+        doctrine = (
+            f"In traditional astrology, the Ascendant and its ruler set the baseline of body, character, and first response. Sect matters because a {context.sect} chart changes which planets operate more comfortably. "
+            f"The sect light, here the {context.sect_light}, adds extra weight to {sect_light.sign if sect_light else 'its'} {cls._title_from_house(sect_house_meta, sect_light.house if sect_light else 'house')} themes."
         )
         return InterpretationBlock(
             block_type="chart_foundation",
             title="Traditional chart foundation",
-            summary=summary,
+            section_id="chart_foundation",
+            summary=plain_meaning,
             citations=cls._resolve_labels([
                 "traditional_sect_condition",
                 "tetrabiblos_house_topic",
                 "tetrabiblos_planetary_quality",
                 "tetrabiblos_sign_expression",
             ]),
+            plain_meaning=plain_meaning,
+            traditional_doctrine=doctrine,
+            chart_evidence=[
+                f"Sect: {context.sect}",
+                f"Ascendant: {context.ascendant_sign}",
+                f"Ascendant ruler: {context.ascendant_ruler} ({cls._planet_condition_phrase(asc_ruler)})" if context.ascendant_ruler else "Ascendant ruler unavailable",
+                f"Sect light: {context.sect_light}" if context.sect_light else "Sect light unavailable",
+            ],
+            life_translation="This is the natal baseline. It often describes how the person naturally acts, recovers, responds, and carries pressure before any yearly timing is added.",
+            why_this_matters="It tells you how the person tends to carry any later annual timing or transit pressure.",
+            technical_terms=["sect", "Ascendant", "Ascendant ruler"],
+            source_tags=cls._resolve_labels([
+                "traditional_sect_condition",
+                "tetrabiblos_house_topic",
+                "tetrabiblos_planetary_quality",
+                "tetrabiblos_sign_expression",
+            ]),
+            display_priority=10,
+            repeat_key=f"chart_foundation_{context.ascendant_sign}_{context.ascendant_ruler}".lower(),
         )
 
     @classmethod
@@ -913,17 +999,20 @@ class NatalInterpretationService:
             if alignment == "aligned" else
             "Fortune and Spirit are split here, so what happens around the body and circumstances may not match what the person most intentionally wants to pursue."
         )
-        summary = (
-            f"Fortune falls in {context.fortune.sign} {cls._title_from_house(fortune_house, context.fortune.house or 'its house')}, so bodily and circumstantial themes gather around {cls._topic_phrase(fortune_house.get('classical_topics', []) or fortune_house.get('modern_topics', []), 3)}. "
-            f"Its ruler, {context.fortune.ruler}, is {context.fortune.ruler_strength or 'mixed'}, which changes how reliably that support lands. "
-            f"Spirit falls in {context.spirit.sign} {cls._title_from_house(spirit_house, context.spirit.house or 'its house')}, so intention and action gather around {cls._topic_phrase(spirit_house.get('classical_topics', []) or spirit_house.get('modern_topics', []), 3)}. "
-            f"Its ruler, {context.spirit.ruler}, is {context.spirit.ruler_strength or 'mixed'}. "
+        plain_meaning = (
+            f"Fortune and Spirit tell two related but different stories. Fortune falls in {context.fortune.sign} {cls._title_from_house(fortune_house, context.fortune.house or 'its house')}, so circumstances gather around {cls._topic_phrase(fortune_house.get('classical_topics', []) or fortune_house.get('modern_topics', []), 3)}. "
+            f"Spirit falls in {context.spirit.sign} {cls._title_from_house(spirit_house, context.spirit.house or 'its house')}, so chosen effort gathers around {cls._topic_phrase(spirit_house.get('classical_topics', []) or spirit_house.get('modern_topics', []), 3)}. "
             f"{alignment_sentence}"
+        )
+        doctrine = (
+            "In traditional astrology, Fortune is tied to the body, circumstance, and material conditions, while Spirit is tied to intention, choice, and deliberate action. "
+            f"Fortune is ruled by {context.fortune.ruler} ({context.fortune.ruler_strength or 'mixed'}), and Spirit is ruled by {context.spirit.ruler} ({context.spirit.ruler_strength or 'mixed'}), which changes how easily each storyline lands."
         )
         return InterpretationBlock(
             block_type="fortune_spirit",
             title="Fortune and Spirit",
-            summary=summary,
+            section_id="fortune_spirit",
+            summary=plain_meaning,
             citations=cls._resolve_labels([
                 "traditional_fortune_spirit",
                 "tetrabiblos_house_topic",
@@ -950,6 +1039,24 @@ class NatalInterpretationService:
                     score=1 if alignment == "aligned" else -1,
                 ),
             ],
+            plain_meaning=plain_meaning,
+            traditional_doctrine=doctrine,
+            chart_evidence=[
+                f"Fortune: {context.fortune.sign} {cls._title_from_house(fortune_house, context.fortune.house or 'its house')} ruled by {context.fortune.ruler}",
+                f"Spirit: {context.spirit.sign} {cls._title_from_house(spirit_house, context.spirit.house or 'its house')} ruled by {context.spirit.ruler}",
+                f"Alignment: {alignment}",
+            ],
+            life_translation="This can feel like a split between what life is demanding materially and what the person most wants to build intentionally, or a strong convergence when both lots point the same way.",
+            why_this_matters="It keeps the reading from flattening circumstance and choice into the same story.",
+            confidence_explainer=cls._confidence_explainer("medium"),
+            technical_terms=["Fortune", "Spirit", "mixed testimony"],
+            source_tags=cls._resolve_labels([
+                "traditional_fortune_spirit",
+                "tetrabiblos_house_topic",
+                "tetrabiblos_planetary_quality",
+            ]),
+            display_priority=40,
+            repeat_key=f"fortune_spirit_{context.fortune.house}_{context.spirit.house}_{alignment}".lower(),
         )
 
     @classmethod
@@ -969,20 +1076,44 @@ class NatalInterpretationService:
             timeframe = (
                 f" The current profection year runs from {annual_profection.starts_at[:10]} to {annual_profection.ends_at[:10]}."
             )
-        summary = (
-            f"Age {annual_profection.age} activates the {cls._title_from_house(house_meta, cls._house_id_from_number(annual_profection.activated_house))}, so the year highlights {topics}. "
-            f"The lord of the year is {annual_profection.lord_of_year}, which is {cls._planet_condition_phrase(year_lord)} in {annual_profection.lord_of_year_sign or 'its sign'} {cls._house_title_for_id(ontology, annual_profection.lord_of_year_house)}."
+        house_title = cls._title_from_house(house_meta, cls._house_id_from_number(annual_profection.activated_house))
+        plain_meaning = (
+            f"This is a {house_title} year ruled by {annual_profection.lord_of_year}. In practical terms, the year keeps returning to {topics}. "
+            f"{annual_profection.lord_of_year} carries that story from {cls._house_title_for_id(ontology, annual_profection.lord_of_year_house)}, which shows where the yearly theme is most likely to become active or manageable."
             f"{timeframe}"
+        )
+        doctrine = (
+            f"Annual profection moves the chart's focus to a new house each birthday. At age {annual_profection.age}, the activated house is {house_title}, and its ruler becomes the lord of the year. "
+            f"Here that ruler is {annual_profection.lord_of_year}, which is {cls._planet_condition_phrase(year_lord)} in {annual_profection.lord_of_year_sign or 'its sign'} {cls._house_title_for_id(ontology, annual_profection.lord_of_year_house)}."
         )
         return InterpretationBlock(
             block_type="annual_profection",
             title="Annual profection",
-            summary=summary,
+            section_id="annual_profection",
+            summary=plain_meaning,
             citations=cls._resolve_labels([
                 "traditional_annual_profection",
                 "tetrabiblos_house_topic",
                 "tetrabiblos_planetary_quality",
             ]),
+            plain_meaning=plain_meaning,
+            traditional_doctrine=doctrine,
+            chart_evidence=[
+                f"Age: {annual_profection.age}",
+                f"Activated house: {house_title}",
+                f"Lord of the year: {annual_profection.lord_of_year}",
+                f"Condition: {cls._planet_condition_phrase(year_lord)}",
+            ],
+            life_translation="This usually feels like one life area keeps becoming the classroom of the year, while one planet keeps acting like the main timer or gatekeeper.",
+            why_this_matters="It explains why one house topic is louder than the rest this year, and why one planet deserves extra attention.",
+            technical_terms=["annual profection", "lord of the year"],
+            source_tags=cls._resolve_labels([
+                "traditional_annual_profection",
+                "tetrabiblos_house_topic",
+                "tetrabiblos_planetary_quality",
+            ]),
+            display_priority=20,
+            repeat_key=f"annual_profection_{annual_profection.activated_house}_{annual_profection.lord_of_year}".lower(),
         )
 
     @classmethod
@@ -996,8 +1127,8 @@ class NatalInterpretationService:
         sun_house_title = cls._house_title_for_id(ontology, solar_return.sun_house)
         year_lord_house_title = cls._house_title_for_id(ontology, solar_return.year_lord_house)
         angular_text = ", ".join(solar_return.angular_planets[:4]) if solar_return.angular_planets else "no standout angular planets"
-        summary = (
-            f"The current solar return rises in {solar_return.return_ascendant_sign}, with the Sun landing in {sun_house_title}. "
+        plain_meaning = (
+            f"The solar return adds this year's atmosphere. It rises in {solar_return.return_ascendant_sign}, with the Sun landing in {sun_house_title}. "
             f"The profection lord {solar_return.year_lord or 'for the year'} falls in {year_lord_house_title}"
             + (
                 f" and is {solar_return.year_lord_strength} there. "
@@ -1011,24 +1142,50 @@ class NatalInterpretationService:
                 else "This return helps concentrate the profection year into a more specific yearly atmosphere."
             )
         )
+        doctrine = "Solar return work does not replace the natal chart or the profection year. It shows how the annual storyline is likely to feel and where it becomes concrete."
         return InterpretationBlock(
             block_type="solar_return",
             title="Solar return overlay",
-            summary=summary,
+            section_id="solar_return",
+            summary=plain_meaning,
             citations=cls._resolve_labels([
                 "traditional_solar_return",
                 "tetrabiblos_house_topic",
                 "tetrabiblos_planetary_quality",
             ]),
+            plain_meaning=plain_meaning,
+            traditional_doctrine=doctrine,
+            chart_evidence=[
+                f"Return ascendant: {solar_return.return_ascendant_sign}" if solar_return.return_ascendant_sign else "Return ascendant unavailable",
+                f"Sun house: {sun_house_title}",
+                f"Year lord house: {year_lord_house_title}",
+                f"Angular planets: {angular_text}",
+            ],
+            why_this_matters="It tells you how the larger yearly pattern is likely to feel on the ground between one birthday and the next.",
+            technical_terms=["solar return", "angular"],
+            source_tags=cls._resolve_labels([
+                "traditional_solar_return",
+                "tetrabiblos_house_topic",
+                "tetrabiblos_planetary_quality",
+            ]),
+            display_priority=50,
+            repeat_key=f"solar_return_{solar_return.return_ascendant_sign}_{solar_return.year_lord}_{solar_return.sun_house}".lower(),
         )
 
     @classmethod
     def _build_topic_judgment_blocks(cls, chart_data: NatalTechnicalChart, ontology: Dict) -> List[InterpretationBlock]:
         blocks: List[InterpretationBlock] = []
         for data in cls.build_topic_judgments(chart_data, ontology):
-            summary = (
-                f"{data.classification.capitalize()} testimony repeats here with {data.confidence} confidence. "
-                + " ".join(f"{item.interpretation}." for item in data.evidence_items[:3])
+            if data.classification == "supportive":
+                opening = "The chart gives clear support here."
+            elif data.classification == "difficult":
+                opening = "This is the area asking for the most care."
+            else:
+                opening = "The testimony here is mixed."
+            summary = opening + " " + " ".join(
+                f"{item.interpretation[:1].upper() + item.interpretation[1:]}"
+                + ("" if item.interpretation.endswith(".") else ".")
+                for item in data.evidence_items[:3]
             )
             blocks.append(
                 InterpretationBlock(
@@ -1040,6 +1197,16 @@ class NatalInterpretationService:
                     confidence=data.confidence,
                     evidence_items=data.evidence_items,
                     caveats=[item.caveat for item in data.evidence_items if item.caveat][:3],
+                    plain_meaning=summary,
+                    traditional_doctrine="Topical judgment weighs the house, its ruler, occupants, witnesses, lots, and repeated testimony rather than relying on one placement in isolation.",
+                    chart_evidence=[item.observation for item in data.evidence_items[:3]],
+                    life_translation="This is where the chart is showing repeated support, repeated pressure, or a genuine mix of both.",
+                    why_this_matters="Topical judgment tells you where the chart gives the clearest encouragement and where it asks for realism, patience, or repair.",
+                    confidence_explainer=cls._confidence_explainer(data.confidence, data.classification),
+                    technical_terms=["mixed testimony", "bonification", "maltreatment"],
+                    source_tags=data.citations,
+                    display_priority=60,
+                    repeat_key=f"topic_{data.key}",
                 )
             )
         return blocks
@@ -1995,7 +2162,7 @@ class NatalInterpretationService:
             oracle = None
             if annual_profection and solar_return and solar_return.year_lord:
                 oracle = (
-                    f"The Ark names {solar_return.year_lord.lower()} as lord of the year"
+                    f"The Ark names {solar_return.year_lord.lower()} as the planet carrying the year"
                     + (
                         f" and reads Fortune and Spirit as {year_map.fortune_spirit_alignment}."
                         if year_map and year_map.fortune_spirit_alignment else
@@ -2004,18 +2171,14 @@ class NatalInterpretationService:
                 )
             elif annual_profection:
                 oracle = (
-                    f"The Ark names {annual_profection.lord_of_year.lower()} as lord of the current profection year."
+                    f"The Ark names {annual_profection.lord_of_year.lower()} as the planet carrying the current profection year."
                 )
             elif context.ascendant_ruler:
                 oracle = f"The Ark starts with {context.ascendant_ruler.lower()} because it rules the Ascendant."
-            headline = (
-                f"Traditional chart frame: {context.ascendant_sign} rising, a {context.sect} chart, "
-                f"and {context.ascendant_ruler} carrying the Ascendant."
-            )
+            headline = f"{context.ascendant_sign} rising sets the baseline, and {context.ascendant_ruler} carries the chart's first response to life."
             if year_map and year_map.activated_house_title and year_map.lord_of_year:
                 headline = (
-                    f"Traditional year map: {context.ascendant_sign} rising, a {context.sect} chart, "
-                    f"with {year_map.activated_house_title.lower()} activated through {year_map.lord_of_year}."
+                    f"This is a {year_map.activated_house_title} year ruled by {year_map.lord_of_year}."
                 )
             return ReadingSection(
                 headline=headline,

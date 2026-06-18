@@ -1,20 +1,32 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ChartWheel } from '../components/ChartWheel';
+import { InterpretationCard } from '../components/InterpretationCard';
+import { PrimaryButton, SecondaryButton, SurfaceCard } from '../components/common';
 import { palette } from '../constants/theme';
 import { astrologyGuideSections } from '../content/astrologyGuide';
-import { ChartWheel } from '../components/ChartWheel';
-import { PrimaryButton, SecondaryButton, SurfaceCard } from '../components/common';
-import { InterpretationCard } from '../components/InterpretationCard';
-import { AnyReadingResponse, InterpretationBlock, TransitAspectRecord } from '../types/app';
+import { AnyReadingResponse, InterpretationBlock, TopicJudgmentRecord, TransitAspectRecord } from '../types/app';
 
-function prettyLabel(value: string | null | undefined, fallback = 'Unknown') {
-  if (!value) return fallback;
-  return value.replace(/_/g, ' ').replace(/\basc\b/gi, 'rising sign');
-}
+type GlossaryEntry = { term: string; meaning: string };
+
+const GLOSSARY: GlossaryEntry[] = [
+  { term: 'Annual profection', meaning: 'A traditional timing technique that moves the focus of life from one house to the next each birthday.' },
+  { term: 'Lord of the year', meaning: 'The planet that rules the activated profection house and carries the main storyline of the year.' },
+  { term: 'Sect', meaning: 'Whether the chart is a day chart or night chart. Sect changes how strongly and constructively certain planets tend to operate.' },
+  { term: 'In sect', meaning: 'A planet is more comfortable because it belongs to the chart’s day or night team.' },
+  { term: 'Contrary to sect', meaning: 'A planet is less comfortable because it is operating outside its preferred day or night condition.' },
+  { term: 'Triplicity dignity', meaning: 'A form of traditional strength based on the element of the sign and whether the chart is day or night.' },
+  { term: 'Succedent', meaning: 'A house with moderate strength: steadier than a cadent house, but less forceful than an angular one.' },
+  { term: 'Fortune', meaning: 'A calculated point connected with the body, circumstances, material conditions, and what happens to the native.' },
+  { term: 'Spirit', meaning: 'A calculated point connected with intention, choice, action, and what the native deliberately pursues.' },
+  { term: 'Mixed testimony', meaning: 'The chart gives both supportive and difficult indications about the same topic.' },
+  { term: 'Bonification', meaning: 'A planet or topic receives help from a benefic such as Jupiter or Venus.' },
+  { term: 'Maltreatment', meaning: 'A planet or topic receives difficult pressure from a malefic such as Mars or Saturn.' },
+];
 
 function formatHouseRef(house?: string | null) {
-  if (!house) return 'unknown house';
+  if (!house) return 'an unknown house';
   return house.replace('House', 'House ');
 }
 
@@ -60,7 +72,7 @@ function bodyTheme(body: string) {
 function buildSkyNarrative(result: AnyReadingResponse, contacts: TransitAspectRecord[]) {
   if (!contacts.length) {
     return [
-      'The current sky is relatively quiet around your chart right now, so this is a better time to stay with the deeper themes of the birth chart than to expect a dramatic outside push from the moment.',
+      'The current sky is relatively quiet around your chart right now, so this is a better time to stay with the deeper annual and natal themes than to expect a dramatic outside push from the moment.',
     ];
   }
 
@@ -73,102 +85,140 @@ function buildSkyNarrative(result: AnyReadingResponse, contacts: TransitAspectRe
     const firstParagraph = `Right now, the sky is leaning most strongly on ${owner}. ${firstLine} In plain language, this means the relationship may feel more emotionally charged, revealing, or active in that area than usual.`;
     if (!second) return [firstParagraph];
     const secondOwner = second.natal_owner === 'primary' ? 'Person A' : second.natal_owner === 'secondary' ? 'Person B' : 'the relationship';
-    const secondParagraph = `${second.transit_body} ${simpleAspectMeaning(second.type)} ${secondOwner === 'the relationship' ? 'the relationship' : `${secondOwner.toLowerCase()}'s`} ${second.natal_body.toLowerCase()} themes as well, so both people may be feeling the moment in different but connected ways. The wisest response is to notice the pattern early and meet it consciously rather than react to it automatically.`;
+    const secondParagraph = `${second.transit_body} ${simpleAspectMeaning(second.type)} ${secondOwner === 'the relationship' ? 'the relationship' : `${secondOwner.toLowerCase()}'s`} ${second.natal_body.toLowerCase()} themes as well, so both people may be feeling the moment in different but connected ways.`;
     return [firstParagraph, secondParagraph];
   }
 
   const second = contacts[1];
   const firstParagraph = `Right now, ${firstLine} This is the part of life most likely to feel louder, more immediate, or more emotionally charged than usual.`;
   if (!second) return [firstParagraph];
-  const secondParagraph = `${second.transit_body} ${simpleAspectMeaning(second.type)} your ${second.natal_body.toLowerCase()} themes as well, so the current sky is asking not only for awareness but also for patience, perspective, and a more conscious response in that part of your life.`;
+  const secondParagraph = `${second.transit_body} ${simpleAspectMeaning(second.type)} your ${second.natal_body.toLowerCase()} themes as well, so the current sky is asking for awareness, patience, and a more conscious response in that part of your life.`;
   return [firstParagraph, secondParagraph];
 }
 
-function buildTakeaways(result: AnyReadingResponse) {
-  const items: string[] = [];
-  if (result.reading.headline) items.push(result.reading.headline);
-  if (result.interpretation_blocks[0]?.title) items.push(result.interpretation_blocks[0].title);
-  if (result.reading.timing_focus) items.push(result.reading.timing_focus);
-  if (result.reading.guidance) items.push(result.reading.guidance);
-  return items.slice(0, 3);
+function dedupeBlocks(blocks: InterpretationBlock[]) {
+  const seen = new Set<string>();
+  return [...blocks]
+    .sort((a, b) => (a.display_priority ?? 100) - (b.display_priority ?? 100))
+    .filter((block) => {
+      const key = block.repeat_key || `${block.block_type}:${block.topic_key || block.title}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
-function buildGlossary(result: AnyReadingResponse) {
-  const base = [
-    { term: 'Rising sign', meaning: 'How you tend to come across at first, especially in new situations.' },
-    { term: 'Sect', meaning: 'Whether the chart is a day or night chart, which changes how planets are judged in the traditional method.' },
-    { term: 'House', meaning: 'The life area where a placement tends to show up most clearly.' },
-    { term: 'Fortune and Spirit', meaning: 'Two traditional lots that help separate bodily or circumstantial themes from intentional or vocational ones.' },
-    { term: 'Annual profection', meaning: 'A traditional timing method that activates one house and its ruler for the current year.' },
-    { term: 'Solar return', meaning: 'A yearly return chart cast for the moment the Sun returns to its natal place, used to concentrate the tone of the year.' },
-    { term: 'Year map', meaning: 'The app’s combined view of the activated house, the year lord, the solar return emphasis, and the Fortune/Spirit split.' },
-    { term: 'Transit', meaning: 'What the planets are doing right now, and how that may affect the birth chart.' },
-    { term: 'Distance from exact', meaning: 'How close a pattern is to its strongest point. Smaller usually means stronger.' },
-  ];
-  if (result.chart_type === 'synastry') {
-    base.splice(3, 0, { term: 'Relationship pattern', meaning: 'A repeated way two people affect or respond to each other.' });
+function blockByType(blocks: InterpretationBlock[], blockType: string) {
+  return blocks.find((block) => block.block_type === blockType);
+}
+
+function sortedTopics(result: AnyReadingResponse) {
+  return [...(result.technical_summary?.topic_judgments ?? [])].sort((a, b) => b.score - a.score);
+}
+
+function confidenceExplainer(topic?: TopicJudgmentRecord | null) {
+  if (!topic) return null;
+  if (topic.confidence === 'high') return 'High confidence means several traditional factors point in the same direction.';
+  if (topic.confidence === 'medium' && topic.classification === 'mixed') return 'Medium confidence here means the chart shows both support and friction, and several factors repeat that mixed picture.';
+  if (topic.confidence === 'medium') return 'Medium confidence means several factors point this way, but the testimony is not unanimous.';
+  return 'Low confidence means the chart offers a clue, but the testimony is still thin or divided.';
+}
+
+function topicSummary(topic?: TopicJudgmentRecord | null) {
+  if (!topic) return null;
+  if (topic.classification === 'supportive') {
+    return `${topic.title} is the most supported area right now. The chart gives repeated help here rather than leaving the topic to stand alone.`;
   }
-  return base;
+  if (topic.classification === 'difficult') {
+    return `${topic.title} is the area asking for the most care. This does not guarantee failure, but it does mean the chart shows repeated friction, cost, or pressure here.`;
+  }
+  return `${topic.title} shows mixed testimony. The chart gives both support and friction here, so the story is not simple or one-sided.`;
+}
+
+function buildOpeningSummary(result: AnyReadingResponse, strongest?: TopicJudgmentRecord | null, strained?: TopicJudgmentRecord | null) {
+  const yearMap = result.chart_type === 'natal' ? result.technical_summary?.year_map : null;
+  if (!yearMap) {
+    return {
+      title: result.reading.headline,
+      paragraphs: [
+        result.reading.practical_meaning,
+        result.reading.psychological_meaning,
+        result.reading.guidance,
+      ].filter(Boolean),
+      testimony: null as string | null,
+    };
+  }
+
+  const topicText = yearMap.activated_topics.length
+    ? yearMap.activated_topics.join(', ')
+    : 'the active house topics';
+  const title = `This is a ${yearMap.activated_house_title || 'current'} year ruled by ${yearMap.lord_of_year || 'its year lord'}.`;
+  const paragraphs = [
+    `In plain language, the year keeps drawing attention to ${topicText}. The emphasis is less about isolated events and more about the themes that keep repeating until they are understood and handled consciously.`,
+    yearMap.lord_of_year
+      ? `${yearMap.lord_of_year} carries the year from ${formatHouseRef(yearMap.lord_of_year_house)}, so that part of life becomes the place where the annual storyline is most likely to become visible, manageable, or meaningful.`
+      : null,
+    yearMap.fortune_spirit_alignment === 'split'
+      ? 'Fortune and Spirit are split, which means circumstances and chosen direction may not be telling the same story. What life demands materially may differ from what you most want to pursue intentionally.'
+      : yearMap.fortune_spirit_alignment === 'aligned'
+        ? 'Fortune and Spirit are aligned, so circumstances and chosen direction are reinforcing each other more than usual.'
+        : null,
+    strongest && strained
+      ? `The chart looks most supportive around ${strongest.title.toLowerCase()} and most pressured around ${strained.title.toLowerCase()}, so the year is not flat. It has clear areas of help and clear areas asking for care.`
+      : null,
+  ].filter((value): value is string => Boolean(value));
+
+  let testimony = 'The testimony is mixed.';
+  if (strongest && strongest.classification === 'supportive' && strained && strained.classification === 'difficult') {
+    testimony = 'The chart shows both support and strain.';
+  }
+  return { title, paragraphs, testimony };
 }
 
 function buildReadingFlow(result: AnyReadingResponse) {
   return result.chart_type === 'synastry'
     ? [
-        'Start with the two natal frame blocks first: they show how each person enters the bond and what their current year is activating.',
-        'Then read the yearly bridge and relationship climate before deciding what the strongest cross-chart patterns mean.',
-        'Use the current sky section to see why a theme may feel stronger right now.',
-        'End with the practical guidance and try one small action instead of trying to absorb everything at once.',
+        'Start with the opening summary so you know the relationship story in plain language before reading the technique.',
+        'Then move through the relationship cards one concept at a time instead of trying to decode every term at once.',
+        'Use the sky card as short-term weather, not the whole relationship reading.',
+        'Open the evidence only when you want to see exactly why the app is making a claim.',
       ]
     : [
-        'Start with the big picture at the top: sect, the rising sign, and the Ascendant ruler set the frame.',
-        'Then use the current year map to see the activated house, year lord, solar return tone, and whether Fortune and Spirit are aligned or split.',
-        'After that, read the teaching cards as topical judgments built from house, ruler, occupants, lots, aversion, planetary witness, and repeated testimony.',
-        'Use the current sky section to see what may be active right now on top of the birth chart.',
-        'End with the practical guidance and try one small action instead of trying to absorb everything at once.',
+        'Start with the plain-English summary first, before looking at the doctrine.',
+        'Then read the timing technique card so you know why this year has its current emphasis.',
+        'Use the planet, Fortune/Spirit, and support/strain cards to see what matters most.',
+        'Treat the current sky as temporary weather layered on top of the larger year map.',
+        'Open the technical drawer only when you want the explicit calculation trail.',
       ];
 }
 
-function buildNarrativeParagraphs(result: AnyReadingResponse) {
-  const paragraphs = [
-    result.reading.practical_meaning,
-    result.reading.psychological_meaning,
-    result.reading.guidance,
-    result.reading.timing_focus,
-    [result.reading.ritual_focus, result.reading.prompt].filter(Boolean).join(' '),
-  ].filter((value): value is string => Boolean(value && value.trim()));
-
-  return paragraphs;
+function learnCardsForGuide(blocks: InterpretationBlock[]) {
+  return blocks
+    .filter((block) => block.technical_terms?.length || block.traditional_doctrine || block.plain_meaning)
+    .slice(0, 8);
 }
 
-function buildYearMapLines(result: AnyReadingResponse) {
-  if (result.chart_type !== 'natal') return [];
-  const yearMap = result.technical_summary?.year_map;
-  if (!yearMap) return [];
-  const lines: string[] = [];
-  if (yearMap.activated_house_title) {
-    lines.push(
-      `Activated house: ${yearMap.activated_house_title} • topics: ${yearMap.activated_topics.join(', ') || 'not specified'}`
-    );
-  }
-  if (yearMap.lord_of_year) {
-    lines.push(
-      `Lord of the year: ${yearMap.lord_of_year} • ${yearMap.lord_of_year_condition ?? 'mixed'} • ${formatHouseRef(yearMap.lord_of_year_house)}`
-    );
-  }
-  if (yearMap.solar_return_ascendant) {
-    lines.push(
-      `Solar return: ${yearMap.solar_return_ascendant} rising • Sun in ${formatHouseRef(yearMap.solar_return_sun_house)} • year lord in ${formatHouseRef(yearMap.solar_return_year_lord_house)}`
-    );
-  }
-  if (yearMap.fortune_spirit_alignment) {
-    lines.push(
-      `Fortune and Spirit: ${prettyLabel(yearMap.fortune_spirit_alignment)}`
-    );
-  }
-  if (yearMap.guidance) {
-    lines.push(yearMap.guidance);
-  }
-  return lines;
+function CollapsibleCard({
+  title,
+  subtitle,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <SurfaceCard title={title} subtitle={subtitle}>
+      <Pressable onPress={() => setOpen((value) => !value)} style={styles.collapseToggle}>
+        <Text style={styles.collapseToggleText}>{open ? 'Hide details' : 'Show details'}</Text>
+        <Feather name={open ? 'chevron-up' : 'chevron-down'} size={16} color={palette.ink} />
+      </Pressable>
+      {open ? children : null}
+    </SurfaceCard>
+  );
 }
 
 export function ReadingScreen({
@@ -189,10 +239,16 @@ export function ReadingScreen({
   onOpenTechnical: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<'reading' | 'guide'>('reading');
-  const takeaways = buildTakeaways(result);
-  const glossary = buildGlossary(result);
-  const readingFlow = buildReadingFlow(result);
-  const narrativeParagraphs = buildNarrativeParagraphs(result);
+  const blocks = useMemo(() => dedupeBlocks(result.interpretation_blocks), [result.interpretation_blocks]);
+  const annualBlock = blockByType(blocks, 'annual_profection');
+  const yearMapBlock = blockByType(blocks, 'year_map');
+  const fortuneBlock = blockByType(blocks, 'fortune_spirit');
+  const solarReturnBlock = blockByType(blocks, 'solar_return');
+  const topicBlocks = blocks.filter((block) => block.block_type === 'topic_judgment');
+  const topicJudgments = sortedTopics(result);
+  const strongest = topicJudgments[0] ?? null;
+  const strained = topicJudgments.length > 1 ? topicJudgments[topicJudgments.length - 1] : topicJudgments[0] ?? null;
+  const openingSummary = buildOpeningSummary(result, strongest, strained);
   const transitContacts = result.chart_type === 'synastry'
     ? [
         ...(result.technical_summary?.primary_transit_aspects ?? []),
@@ -200,19 +256,33 @@ export function ReadingScreen({
       ].sort((a, b) => a.orb - b.orb)
     : (result.technical_summary?.transit_aspects ?? []);
   const skyNarrative = buildSkyNarrative(result, transitContacts);
-  const yearMapLines = buildYearMapLines(result);
-
   const transitStamp = result.technical_summary?.transit_timestamp
     ? `${result.technical_summary.transit_timestamp.slice(0, 16).replace('T', ' ')}${result.technical_summary?.transit_timezone ? ` • ${result.technical_summary.transit_timezone}` : ''}`
     : null;
+  const readingFlow = buildReadingFlow(result);
+  const guideCards = learnCardsForGuide(blocks);
+  const technicalLines = [
+    result.technical_summary?.house_system ? `House system: ${result.technical_summary.house_system}` : null,
+    result.technical_summary?.chart_data?.traditional_context?.sect ? `Sect: ${result.technical_summary.chart_data.traditional_context.sect}` : null,
+    result.technical_summary?.chart_data?.traditional_context?.ascendant_sign ? `Ascendant: ${result.technical_summary.chart_data.traditional_context.ascendant_sign}` : null,
+    result.technical_summary?.annual_profection?.activated_house ? `Activated house: House ${result.technical_summary.annual_profection.activated_house}` : null,
+    result.technical_summary?.annual_profection?.lord_of_year ? `Lord of the year: ${result.technical_summary.annual_profection.lord_of_year}` : null,
+    result.technical_summary?.solar_return?.return_ascendant_sign ? `Solar return ascendant: ${result.technical_summary.solar_return.return_ascendant_sign}` : null,
+    result.technical_summary?.chart_data?.traditional_context?.fortune ? `Fortune: ${result.technical_summary.chart_data.traditional_context.fortune.sign} ${formatHouseRef(result.technical_summary.chart_data.traditional_context.fortune.house)}` : null,
+    result.technical_summary?.chart_data?.traditional_context?.spirit ? `Spirit: ${result.technical_summary.chart_data.traditional_context.spirit.sign} ${formatHouseRef(result.technical_summary.chart_data.traditional_context.spirit.house)}` : null,
+  ].filter((value): value is string => Boolean(value));
 
   return (
     <>
       <View style={styles.heroCard}>
-        <Text style={styles.eyebrow}>{result.chart_type === 'synastry' ? 'Relationship Reading' : 'Natal Reading'}</Text>
-        <Text style={styles.title}>{result.reading.headline}</Text>
-        {result.reading.oracle ? <Text style={styles.oracle}>{result.reading.oracle}</Text> : null}
-        {narrativeParagraphs.map((paragraph, index) => <Text key={`${index}-${paragraph.slice(0, 24)}`} style={styles.body}>{paragraph}</Text>)}
+        <Text style={styles.eyebrow}>{result.chart_type === 'synastry' ? 'Relationship Reading' : 'Reading'}</Text>
+        <Text style={styles.title}>Your year in plain English</Text>
+        <Text style={styles.summaryLead}>{openingSummary.title}</Text>
+        {openingSummary.paragraphs.map((paragraph, index) => (
+          <Text key={`${index}-${paragraph.slice(0, 24)}`} style={styles.body}>{paragraph}</Text>
+        ))}
+        {openingSummary.testimony ? <Text style={styles.oracle}>{openingSummary.testimony}</Text> : null}
+        {result.reading.oracle ? <Text style={styles.supporting}>{result.reading.oracle}</Text> : null}
       </View>
 
       <View style={styles.tabWrap}>
@@ -224,75 +294,127 @@ export function ReadingScreen({
         </Pressable>
       </View>
 
-      {activeTab === 'reading' && result.prediction_cards?.length ? (
+      {activeTab === 'reading' ? (
         <>
-          {yearMapLines.length ? (
-            <SurfaceCard title="Current year map" subtitle="This combines the profection year, solar return, and Fortune/Spirit into one timing frame.">
+          {annualBlock ? (
+            <SurfaceCard title="Why this year has this theme" subtitle="Plain meaning first, technique second.">
+              <Text style={styles.body}>{annualBlock.plain_meaning || annualBlock.summary}</Text>
+              {annualBlock.why_this_matters ? <Text style={styles.whyLine}>Why this matters: {annualBlock.why_this_matters}</Text> : null}
+              {annualBlock.traditional_doctrine ? <Text style={styles.supporting}>{annualBlock.traditional_doctrine}</Text> : null}
+            </SurfaceCard>
+          ) : null}
+
+          {yearMapBlock ? (
+            <SurfaceCard title="The planet carrying the year" subtitle="This is the planet responsible for carrying the main storyline from one birthday to the next.">
+              <Text style={styles.body}>{yearMapBlock.plain_meaning || yearMapBlock.summary}</Text>
+              {yearMapBlock.why_this_matters ? <Text style={styles.whyLine}>Why this matters: {yearMapBlock.why_this_matters}</Text> : null}
+            </SurfaceCard>
+          ) : null}
+
+          {fortuneBlock ? (
+            <SurfaceCard title="What happens to you vs. what you choose" subtitle="Fortune shows circumstance. Spirit shows chosen direction.">
+              <Text style={styles.body}>{fortuneBlock.plain_meaning || fortuneBlock.summary}</Text>
+              {fortuneBlock.why_this_matters ? <Text style={styles.whyLine}>Why this matters: {fortuneBlock.why_this_matters}</Text> : null}
+            </SurfaceCard>
+          ) : null}
+
+          {(strongest || strained) ? (
+            <SurfaceCard title="Where the chart gives support and where it asks for care" subtitle="The chart does not treat every life area equally.">
+              {strongest ? (
+                <View style={styles.supportBlock}>
+                  <Text style={styles.sectionLabel}>Most supported</Text>
+                  <Text style={styles.cardTitle}>{strongest.title}</Text>
+                  <Text style={styles.body}>{topicSummary(strongest)}</Text>
+                  {confidenceExplainer(strongest) ? <Text style={styles.supporting}>{confidenceExplainer(strongest)}</Text> : null}
+                </View>
+              ) : null}
+              {strained ? (
+                <View style={styles.supportBlock}>
+                  <Text style={styles.sectionLabel}>Most strained</Text>
+                  <Text style={styles.cardTitle}>{strained.title}</Text>
+                  <Text style={styles.body}>{topicSummary(strained)}</Text>
+                  {confidenceExplainer(strained) ? <Text style={styles.supporting}>{confidenceExplainer(strained)}</Text> : null}
+                </View>
+              ) : null}
+            </SurfaceCard>
+          ) : null}
+
+          {transitContacts.length ? (
+            <SurfaceCard title="What the sky is emphasizing right now" subtitle="Today’s transits describe the weather, not the whole reading.">
+              {transitStamp ? <Text style={styles.transitStamp}>{transitStamp}</Text> : null}
               <View style={styles.flowStack}>
-                {yearMapLines.map((line) => (
-                  <Text key={line} style={styles.flowText}>• {line}</Text>
+                {skyNarrative.map((paragraph, index) => (
+                  <Text key={`${index}-${paragraph.slice(0, 20)}`} style={styles.body}>{paragraph}</Text>
+                ))}
+              </View>
+              <View style={styles.contactList}>
+                {transitContacts.slice(0, 3).map((contact) => (
+                  <Text key={formatTransitContact(result, contact)} style={styles.contactLine}>• {formatTransitContact(result, contact)}</Text>
                 ))}
               </View>
             </SurfaceCard>
           ) : null}
 
-        <SurfaceCard title="What to expect next" subtitle="This section translates the chart into practical near-term guidance in plain language.">
-          <View style={styles.predictionStack}>
-            {result.prediction_cards.map((card) => (
-              <View key={card.key} style={styles.predictionCard}>
-                <View style={styles.predictionHeader}>
-                  <Text style={styles.predictionTimeframe}>{card.timeframe}</Text>
-                  <Text style={styles.predictionTitle}>{card.title}</Text>
-                </View>
-                <Text style={styles.predictionSummary}>{card.summary}</Text>
-                {card.opportunities.length ? <Text style={styles.predictionList}><Text style={styles.predictionLabel}>Helpful openings:</Text> {card.opportunities.join(' • ')}</Text> : null}
-                {card.cautions.length ? <Text style={styles.predictionList}><Text style={styles.predictionLabel}>What to watch for:</Text> {card.cautions.join(' • ')}</Text> : null}
-                {card.rituals.length ? <Text style={styles.predictionList}><Text style={styles.predictionLabel}>Try this:</Text> {card.rituals.join(' • ')}</Text> : null}
-                {card.citations.length ? <Text style={styles.predictionCitations}>{card.citations.join(' • ')}</Text> : null}
-              </View>
+          <SurfaceCard title="Visual chart map" subtitle="The outer ring shows the natal chart. The inner ring shows the timing or live overlay. The center lines show major aspects.">
+            <Text style={styles.chartHelper}>Use the chart to orient yourself, then let the written reading tell you what matters most first.</Text>
+            <ChartWheel
+              title={result.chart_type === 'synastry' ? 'Relationship chart map' : 'Birth chart map'}
+              primaryChart={result.chart_type === 'synastry' ? result.technical_summary?.primary_chart_data : result.technical_summary?.chart_data}
+              secondaryChart={result.chart_type === 'synastry' ? result.technical_summary?.secondary_chart_data : result.technical_summary?.transit_chart_data}
+              compact
+            />
+            <SecondaryButton label="Open full chart details" onPress={onOpenTechnical} icon={<MaterialCommunityIcons name="chart-bubble" size={17} color={palette.ink} />} />
+          </SurfaceCard>
+
+          <SurfaceCard title="Learn each part of your reading" subtitle="Each card starts with plain meaning, then opens into doctrine and evidence.">
+            {blocks.map((block) => (
+              <InterpretationCard key={`${block.block_type}-${block.repeat_key || block.title}`} block={block} onPress={() => onOpenDetail(block)} />
             ))}
+          </SurfaceCard>
+
+          <CollapsibleCard title="How this reading was calculated" subtitle="Technical evidence and doctrine stay here so the main reading can stay readable.">
+            <View style={styles.flowStack}>
+              {technicalLines.map((line) => <Text key={line} style={styles.flowText}>• {line}</Text>)}
+            </View>
+            {solarReturnBlock?.chart_evidence?.length ? (
+              <View style={styles.drawerSection}>
+                <Text style={styles.sectionLabel}>Solar return</Text>
+                {solarReturnBlock.chart_evidence.map((line) => <Text key={line} style={styles.flowText}>• {line}</Text>)}
+              </View>
+            ) : null}
+            {topicBlocks.length ? (
+              <View style={styles.drawerSection}>
+                <Text style={styles.sectionLabel}>Confidence rules</Text>
+                {topicBlocks.slice(0, 3).map((block) => (
+                  <Text key={block.title} style={styles.flowText}>• {block.title}: {block.confidence_explainer || 'Traditional repeated testimony determines the confidence language.'}</Text>
+                ))}
+              </View>
+            ) : null}
+            {result.source_lenses?.length ? (
+              <View style={styles.drawerSection}>
+                <Text style={styles.sectionLabel}>Source notes</Text>
+                {result.source_lenses.map((lens) => (
+                  <Text key={lens.lens} style={styles.flowText}>• {lens.labels.join(' • ')}</Text>
+                ))}
+              </View>
+            ) : null}
+            {result.notes.length ? (
+              <View style={styles.drawerSection}>
+                <Text style={styles.sectionLabel}>Calculation notes</Text>
+                {result.notes.map((note) => <Text key={note} style={styles.flowText}>• {note}</Text>)}
+              </View>
+            ) : null}
+          </CollapsibleCard>
+
+          <View style={styles.row}>
+            <View style={styles.flex}><SecondaryButton label="Edit birth details" onPress={onEditOnboarding} icon={<Feather name="edit-3" size={15} color={palette.ink} />} /></View>
+            <View style={styles.flex}><PrimaryButton label="Refresh reading" onPress={onRefresh} loading={loading} icon={<Feather name="refresh-cw" size={15} color={palette.white} />} /></View>
           </View>
-        </SurfaceCard>
+          <SecondaryButton label="Account and settings" onPress={onOpenAccount} icon={<Ionicons name="person-circle-outline" size={17} color={palette.ink} />} />
         </>
-      ) : null}
-
-      {activeTab === 'reading' && transitContacts.length ? (
-        <SurfaceCard title="Sky Chart" subtitle="This section explains what the current sky is emphasizing in plain language.">
-          {transitStamp ? <Text style={styles.transitStamp}>{transitStamp}</Text> : null}
-          <View style={styles.transitStack}>
-            {skyNarrative.map((paragraph, index) => (
-              <View key={`${index}-${paragraph.slice(0, 20)}`} style={styles.transitCard}>
-                <Text style={styles.transitSummary}>{paragraph}</Text>
-              </View>
-            ))}
-          </View>
-        </SurfaceCard>
-      ) : null}
-
-      {activeTab === 'reading' ? (
-        <SurfaceCard title="Chart map" subtitle="Think of this as a visual map of the reading. You do not need to decode every symbol at once.">
-          <Text style={styles.chartHelper}>The chart shows where the main patterns sit. Use it to orient yourself, then use the written reading to understand what matters most.</Text>
-          <ChartWheel
-            title={result.chart_type === 'synastry' ? 'Relationship chart map' : 'Birth chart map'}
-            primaryChart={result.chart_type === 'synastry' ? result.technical_summary?.primary_chart_data : result.technical_summary?.chart_data}
-            secondaryChart={result.chart_type === 'synastry' ? result.technical_summary?.secondary_chart_data : result.technical_summary?.transit_chart_data}
-            compact
-          />
-          <SecondaryButton label="Open full chart details" onPress={onOpenTechnical} icon={<MaterialCommunityIcons name="chart-bubble" size={17} color={palette.ink} />} />
-        </SurfaceCard>
-      ) : null}
-
-      {activeTab === 'reading' ? (
-        <SurfaceCard title="Learn each part of your reading" subtitle="Tap any card for a more focused explanation of that placement or pattern.">
-          {result.interpretation_blocks.map((block) => (
-            <InterpretationCard key={`${block.block_type}-${block.title}`} block={block} onPress={() => onOpenDetail(block)} />
-          ))}
-        </SurfaceCard>
-      ) : null}
-
-      {activeTab === 'guide' ? (
+      ) : (
         <>
-          <SurfaceCard title="How to read this page" subtitle="The app keeps the advanced material, but it teaches you in a simple order.">
+          <SurfaceCard title="How to read this page" subtitle="The reading now teaches one concept at a time.">
             <View style={styles.flowStack}>
               {readingFlow.map((step, index) => (
                 <Text key={step} style={styles.flowText}><Text style={styles.flowIndex}>{index + 1}. </Text>{step}</Text>
@@ -300,15 +422,21 @@ export function ReadingScreen({
             </View>
           </SurfaceCard>
 
-          <SurfaceCard title="If you remember only three things" subtitle="This is the shortest version of the reading.">
-            <View style={styles.flowStack}>
-              {takeaways.map((item) => <Text key={item} style={styles.flowText}>• {item}</Text>)}
+          <SurfaceCard title="Learn each part of your reading" subtitle="Each concept starts in plain language, then expands into traditional doctrine.">
+            <View style={styles.glossaryWrap}>
+              {guideCards.map((block) => (
+                <View key={block.title} style={styles.glossaryCard}>
+                  <Text style={styles.glossaryTerm}>{block.title}</Text>
+                  <Text style={styles.glossaryMeaning}>{block.plain_meaning || block.summary}</Text>
+                  {block.traditional_doctrine ? <Text style={styles.supporting}>{block.traditional_doctrine}</Text> : null}
+                </View>
+              ))}
             </View>
           </SurfaceCard>
 
-          <SurfaceCard title="Quick term guide" subtitle="A few short definitions so the app can teach without hiding the real terms.">
+          <SurfaceCard title="Quick term guide" subtitle="Traditional vocabulary should teach, not block understanding.">
             <View style={styles.glossaryWrap}>
-              {glossary.map((item) => (
+              {GLOSSARY.map((item) => (
                 <View key={item.term} style={styles.glossaryCard}>
                   <Text style={styles.glossaryTerm}>{item.term}</Text>
                   <Text style={styles.glossaryMeaning}>{item.meaning}</Text>
@@ -332,40 +460,8 @@ export function ReadingScreen({
               ))}
             </View>
           </SurfaceCard>
-
         </>
-      ) : null}
-
-      {activeTab === 'reading' && result.source_lenses?.length ? (
-        <SurfaceCard title="How this reading was interpreted" subtitle="These are the frameworks The Ark used while building the reading.">
-          <View style={styles.lensWrap}>
-            {result.source_lenses.map((lens) => (
-              <View key={lens.lens} style={styles.lensCard}>
-                <Text style={styles.lensTitle}>{prettyLabel(lens.lens).toUpperCase()}</Text>
-                <Text style={styles.lensText}>{lens.labels.join(' • ')}</Text>
-              </View>
-            ))}
-          </View>
-        </SurfaceCard>
-      ) : null}
-
-      {activeTab === 'reading' ? (
-        <SurfaceCard title="Notes from the app" subtitle="These notes explain anything the app had to estimate, simplify, or handle behind the scenes.">
-          {result.notes.map((note) => (
-            <Text key={note} style={styles.note}>• {note}</Text>
-          ))}
-        </SurfaceCard>
-      ) : null}
-
-      {activeTab === 'reading' ? (
-        <>
-          <View style={styles.row}>
-            <View style={styles.flex}><SecondaryButton label="Edit birth details" onPress={onEditOnboarding} icon={<Feather name="edit-3" size={15} color={palette.ink} />} /></View>
-            <View style={styles.flex}><PrimaryButton label="Refresh reading" onPress={onRefresh} loading={loading} icon={<Feather name="refresh-cw" size={15} color={palette.white} />} /></View>
-          </View>
-          <SecondaryButton label="Account and settings" onPress={onOpenAccount} icon={<Ionicons name="person-circle-outline" size={17} color={palette.ink} />} />
-        </>
-      ) : null}
+      )}
     </>
   );
 }
@@ -381,8 +477,11 @@ const styles = StyleSheet.create({
   },
   eyebrow: { fontSize: 10, letterSpacing: 1.7, textTransform: 'uppercase', color: palette.muted, fontWeight: '700' },
   title: { fontSize: 30, lineHeight: 38, color: palette.ink, fontWeight: '700' },
-  oracle: { fontSize: 13, lineHeight: 20, color: palette.ink, fontWeight: '600' },
+  summaryLead: { fontSize: 20, lineHeight: 28, color: palette.ink, fontWeight: '700' },
+  oracle: { fontSize: 14, lineHeight: 22, color: palette.ink, fontWeight: '700' },
   body: { fontSize: 15, lineHeight: 24, color: palette.ink },
+  supporting: { fontSize: 13, lineHeight: 21, color: palette.muted },
+  whyLine: { fontSize: 14, lineHeight: 22, color: palette.ink, fontWeight: '700' },
   tabWrap: {
     flexDirection: 'row',
     gap: 6,
@@ -402,27 +501,13 @@ const styles = StyleSheet.create({
   tabPillActive: { backgroundColor: palette.accent },
   tabText: { fontSize: 13, lineHeight: 17, fontWeight: '700', color: palette.muted },
   tabTextActive: { color: palette.white },
-  predictionStack: { gap: 14 },
+  supportBlock: { gap: 8, paddingTop: 4 },
+  sectionLabel: { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: palette.muted, fontWeight: '700' },
+  cardTitle: { fontSize: 18, lineHeight: 24, color: palette.ink, fontWeight: '700' },
   transitStamp: { fontSize: 11, lineHeight: 17, color: palette.muted, fontWeight: '700' },
-  transitStack: { gap: 12 },
+  contactList: { gap: 6 },
+  contactLine: { fontSize: 12, lineHeight: 18, color: palette.muted },
   chartHelper: { fontSize: 14, lineHeight: 21, color: palette.muted },
-  transitCard: { backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.border, borderRadius: 16, padding: 16, gap: 6 },
-  transitTitle: { fontSize: 16, lineHeight: 21, color: palette.ink, fontWeight: '700' },
-  transitSummary: { fontSize: 14, lineHeight: 21, color: palette.muted },
-  predictionCard: { backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.border, borderRadius: 16, padding: 18, gap: 10 },
-  predictionHeader: { gap: 5 },
-  predictionTimeframe: { fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: palette.muted, fontWeight: '700' },
-  predictionTitle: { fontSize: 20, lineHeight: 26, color: palette.ink, fontWeight: '700' },
-  predictionSummary: { fontSize: 15, lineHeight: 22, color: palette.ink },
-  predictionList: { fontSize: 13, lineHeight: 20, color: palette.muted },
-  predictionLabel: { color: palette.ink, fontWeight: '700' },
-  predictionCitations: { fontSize: 12, lineHeight: 18, color: palette.muted },
-  lensWrap: { gap: 12 },
-  lensCard: { backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.border, borderRadius: 14, padding: 16, gap: 7 },
-  lensTitle: { fontSize: 11, letterSpacing: 1.3, textTransform: 'uppercase', color: palette.ink, fontWeight: '700' },
-  lensText: { fontSize: 13, lineHeight: 20, color: palette.muted },
-  metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  note: { fontSize: 14, lineHeight: 21, color: palette.muted },
   flowStack: { gap: 10 },
   flowText: { fontSize: 14, lineHeight: 22, color: palette.ink },
   flowIndex: { color: palette.accent, fontWeight: '700' },
@@ -435,6 +520,14 @@ const styles = StyleSheet.create({
   docTitle: { fontSize: 18, lineHeight: 24, color: palette.ink, fontWeight: '700' },
   docParagraph: { fontSize: 15, lineHeight: 23, color: palette.ink },
   docBullet: { fontSize: 14, lineHeight: 22, color: palette.muted },
+  collapseToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  collapseToggleText: { fontSize: 13, lineHeight: 18, color: palette.ink, fontWeight: '700' },
+  drawerSection: { gap: 8, paddingTop: 8 },
   row: { flexDirection: 'row', gap: 10 },
   flex: { flex: 1 },
 });

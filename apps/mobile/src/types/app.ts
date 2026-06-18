@@ -38,10 +38,22 @@ export type InterpretationBlock = {
   title: string;
   summary: string;
   citations: string[];
+  section_id?: string | null;
   topic_key?: string | null;
   confidence?: string | null;
   evidence_items: EvidenceItem[];
   caveats: string[];
+  plain_meaning?: string | null;
+  traditional_doctrine?: string | null;
+  chart_evidence?: string[];
+  life_translation?: string | null;
+  why_this_matters?: string | null;
+  confidence_explainer?: string | null;
+  caveat?: string | null;
+  technical_terms?: string[];
+  source_tags?: string[];
+  display_priority?: number;
+  repeat_key?: string | null;
 };
 
 export type SourceLens = {

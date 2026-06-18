@@ -68,7 +68,22 @@ function realLifeExample(block: InterpretationBlock) {
   return examples[block.block_type] || 'This may show up as a repeated habit, pressure point, or life theme that becomes easier to notice once you know what to look for.';
 }
 
+function confidenceSummary(block: InterpretationBlock) {
+  if (block.confidence_explainer) return block.confidence_explainer;
+  if (!block.confidence) return null;
+  if (block.confidence === 'high') return 'High confidence means several traditional factors point in the same direction.';
+  if (block.confidence === 'medium') return 'Medium confidence means several factors point this way, but the testimony is not unanimous.';
+  return 'Low confidence means the chart offers a clue, but the testimony is still thin or divided.';
+}
+
 export function DetailScreen({ block, onBack }: { block: InterpretationBlock; onBack: () => void }) {
+  const mainMeaning = block.plain_meaning || block.summary;
+  const doctrine = block.traditional_doctrine;
+  const evidenceLines = block.chart_evidence?.length ? block.chart_evidence : [];
+  const useInLife = block.life_translation || realLifeExample(block);
+  const whyThisMatters = block.why_this_matters;
+  const confidenceText = confidenceSummary(block);
+
   return (
     <>
       <SurfaceCard title="Learn this part of the reading" subtitle={prettyBlockType(block.block_type)} accent>
@@ -79,12 +94,45 @@ export function DetailScreen({ block, onBack }: { block: InterpretationBlock; on
             <Text style={styles.subtitle}>This screen slows the reading down so you can focus on one placement or pattern at a time.</Text>
           </View>
         </View>
-        {block.confidence ? <Text style={styles.confidence}>Confidence: {block.confidence}</Text> : null}
-        <Text style={styles.summary}>{block.summary}</Text>
+        {block.confidence ? <Text style={styles.confidence}>{block.confidence.charAt(0).toUpperCase() + block.confidence.slice(1)} confidence</Text> : null}
+        <Text style={styles.summary}>{mainMeaning}</Text>
+        {whyThisMatters ? <Text style={styles.why}>Why this matters: {whyThisMatters}</Text> : null}
+        {confidenceText ? <Text style={styles.supporting}>{confidenceText}</Text> : null}
       </SurfaceCard>
 
+      {doctrine ? (
+        <SurfaceCard title="Traditional rule" subtitle="This is the doctrine underneath the plain-language reading.">
+          <Text style={styles.summary}>{doctrine}</Text>
+        </SurfaceCard>
+      ) : null}
+
+      {evidenceLines.length ? (
+        <SurfaceCard title="Chart evidence" subtitle="These are the specific chart facts supporting this part of the reading.">
+          <View style={styles.caveatStack}>
+            {evidenceLines.map((line) => (
+              <Text key={line} style={styles.summary}>• {line}</Text>
+            ))}
+          </View>
+        </SurfaceCard>
+      ) : null}
+
+      <SurfaceCard title="What it may look like in life" subtitle="Use this as a bridge between symbolic language and everyday experience.">
+        <Text style={styles.summary}>{useInLife}</Text>
+      </SurfaceCard>
+
+      {block.caveat || block.caveats.length ? (
+        <SurfaceCard title="Caveat" subtitle="Traditional astrology points to emphasis and pattern, not mechanical certainty.">
+          <View style={styles.caveatStack}>
+            {block.caveat ? <Text style={styles.summary}>• {block.caveat}</Text> : null}
+            {block.caveats.map((caveat) => (
+              <Text key={caveat} style={styles.summary}>• {caveat}</Text>
+            ))}
+          </View>
+        </SurfaceCard>
+      ) : null}
+
       {block.evidence_items.length ? (
-        <SurfaceCard title="Why the app says this" subtitle="This is the explicit reasoning trail behind the interpretation.">
+        <SurfaceCard title="Technical evidence" subtitle="This is the full reasoning trail behind the interpretation.">
           <View style={styles.evidenceStack}>
             {block.evidence_items.map((item, index) => (
               <View key={`${block.title}-evidence-${index}`} style={styles.evidenceCard}>
@@ -102,30 +150,28 @@ export function DetailScreen({ block, onBack }: { block: InterpretationBlock; on
         </SurfaceCard>
       ) : null}
 
-      <SurfaceCard title="Sources used here" subtitle="These labels show the traditions or reference frames behind this explanation.">
-        <View style={styles.citationWrap}>
-          {block.citations.map((citation) => (
-            <View key={citation} style={styles.citationChip}><Text style={styles.citationText}>{citation}</Text></View>
-          ))}
-        </View>
-      </SurfaceCard>
+      {block.technical_terms?.length ? (
+        <SurfaceCard title="Technical terms in this card" subtitle="These are the main traditional terms behind this section.">
+          <View style={styles.citationWrap}>
+            {block.technical_terms.map((term) => (
+              <View key={term} style={styles.citationChip}><Text style={styles.citationText}>{term}</Text></View>
+            ))}
+          </View>
+        </SurfaceCard>
+      ) : null}
 
-      {block.caveats.length ? (
-        <SurfaceCard title="Caveats" subtitle="These are the built-in limits or warnings attached to this part of the reading.">
-          <View style={styles.caveatStack}>
-            {block.caveats.map((caveat) => (
-              <Text key={caveat} style={styles.summary}>• {caveat}</Text>
+      {(block.source_tags?.length || block.citations.length) ? (
+        <SurfaceCard title="Source notes" subtitle="These labels show the traditions or reference frames behind this explanation.">
+          <View style={styles.citationWrap}>
+            {(block.source_tags?.length ? block.source_tags : block.citations).map((citation) => (
+              <View key={citation} style={styles.citationChip}><Text style={styles.citationText}>{citation}</Text></View>
             ))}
           </View>
         </SurfaceCard>
       ) : null}
 
       <SurfaceCard title="How to use this" subtitle="A good reading teaches in layers. You do not need to understand everything at once.">
-        <Text style={styles.summary}>Start with the plain meaning. Then notice where it fits your real life. If the wording feels abstract, come back to the phrases that describe behavior, habits, pressure points, or repeated life themes.</Text>
-      </SurfaceCard>
-
-      <SurfaceCard title="How this may show up in real life" subtitle="Use this as a bridge between symbolic language and everyday experience.">
-        <Text style={styles.summary}>{realLifeExample(block)}</Text>
+        <Text style={styles.summary}>Start with the plain meaning. Then notice where it fits real life. If the wording feels abstract, come back to the chart evidence and the life translation instead of trying to memorize doctrine all at once.</Text>
       </SurfaceCard>
 
       <SecondaryButton label="Back to reading" onPress={onBack} icon={<Feather name="arrow-left" size={15} color={palette.ink} />} />
@@ -139,8 +185,10 @@ const styles = StyleSheet.create({
   textWrap: { flex: 1, gap: 4 },
   title: { fontSize: 24, lineHeight: 31, color: palette.ink, fontWeight: '700' },
   subtitle: { fontSize: 13, lineHeight: 18, color: palette.muted },
-  confidence: { fontSize: 13, lineHeight: 18, color: palette.muted, fontWeight: '700', textTransform: 'capitalize' },
+  confidence: { fontSize: 13, lineHeight: 18, color: palette.muted, fontWeight: '700' },
   summary: { fontSize: 16, lineHeight: 26, color: palette.ink },
+  why: { fontSize: 15, lineHeight: 23, color: palette.ink, fontWeight: '700' },
+  supporting: { fontSize: 14, lineHeight: 22, color: palette.muted },
   evidenceStack: { gap: 14 },
   evidenceCard: { gap: 8, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: palette.border, backgroundColor: palette.surface },
   evidenceLabel: { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: palette.ink, fontWeight: '700' },

@@ -330,10 +330,22 @@ class InterpretationBlock(BaseModel):
     title: str
     summary: str
     citations: List[str]
+    section_id: Optional[str] = None
     topic_key: Optional[str] = None
     confidence: Optional[str] = None
     evidence_items: List[EvidenceItem] = Field(default_factory=list)
     caveats: List[str] = Field(default_factory=list)
+    plain_meaning: Optional[str] = None
+    traditional_doctrine: Optional[str] = None
+    chart_evidence: List[str] = Field(default_factory=list)
+    life_translation: Optional[str] = None
+    why_this_matters: Optional[str] = None
+    confidence_explainer: Optional[str] = None
+    caveat: Optional[str] = None
+    technical_terms: List[str] = Field(default_factory=list)
+    source_tags: List[str] = Field(default_factory=list)
+    display_priority: int = 100
+    repeat_key: Optional[str] = None
 
 
 class NatalReadingResponse(BaseModel):
