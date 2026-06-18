@@ -82,6 +82,7 @@ export function sanitizeReadingResponse(result: AnyReadingResponse): AnyReadingR
       ...result.reading,
       headline: cleanString(result.reading.headline) || result.reading.headline,
       practical_meaning: cleanString(result.reading.practical_meaning) || result.reading.practical_meaning,
+      life_translation: cleanString(result.reading.life_translation) || result.reading.life_translation,
       psychological_meaning: cleanString(result.reading.psychological_meaning) || result.reading.psychological_meaning,
       guidance: cleanString(result.reading.guidance) || result.reading.guidance,
       prompt: cleanString(result.reading.prompt),

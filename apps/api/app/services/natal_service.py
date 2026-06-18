@@ -27,10 +27,10 @@ class NatalReadingService:
             SourceLens(
                 lens="traditional_core",
                 labels=[
-                    "Traditional core currently used: whole-sign houses, seven visible planets, sect, and house rulerships",
-                    "Traditional core currently used: planetary condition, Fortune and Spirit, annual profections, and solar return overlay",
-                    "Traditional core method: repeated testimony outweighs isolated placements",
-                    "Traditional core method: observation, rule, interpretation, confidence, and caveat are now exposed as structured evidence in topic judgment",
+                    "Ancient and traditional core: whole-sign houses, seven visible planets, sect, and house rulerships",
+                    "Ancient and traditional core: planetary condition, Fortune and Spirit, annual profections, and solar return timing",
+                    "Traditional method: repeated testimony outweighs isolated placements",
+                    "Traditional method: observation, rule, interpretation, confidence, and caveat are exposed as structured evidence in topic judgment",
                 ],
             )
         ]
@@ -39,8 +39,8 @@ class NatalReadingService:
             SourceLens(
                 lens="app_synthesis",
                 labels=[
-                    "App synthesis currently used: confidence language and plain-English teaching around repeated testimony",
-                    "App synthesis currently used: symbolic correspondence language must not override structural chart testimony",
+                    "App synthesis: explanatory language, confidence wording, and reading order are added on top of the traditional judgment",
+                    "App synthesis: user-facing summaries must not override structural chart testimony",
                 ],
             )
         )
@@ -60,8 +60,8 @@ class NatalReadingService:
                 SourceLens(
                     lens="modern_psychology",
                     labels=[
-                        "Modern optional layer: Jungian interpretation",
-                        "Modern optional layer: psychology should not override chart structure",
+                        "Modern optional overlay: Jungian interpretation",
+                        "Modern optional overlay: psychology does not override chart structure",
                     ],
                 )
             )
@@ -110,7 +110,7 @@ class NatalReadingService:
             practical_meaning=(
                 "The API can resolve birthplace inputs, calculate a natal chart, and return structured technical, ontological, and predictive output once sufficient birth context is present."
             ),
-            psychological_meaning=(
+            life_translation=(
                 "The Ark starts from traditional chart structure and only adds optional modern overlays when you ask for them."
             ),
             guidance=(

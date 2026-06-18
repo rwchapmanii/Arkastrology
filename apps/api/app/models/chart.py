@@ -301,7 +301,8 @@ class SynastryTechnicalSummary(BaseModel):
 class ReadingSection(BaseModel):
     headline: str
     practical_meaning: str
-    psychological_meaning: str
+    life_translation: Optional[str] = None
+    psychological_meaning: Optional[str] = None
     guidance: str
     prompt: Optional[str] = None
     timing_focus: Optional[str] = None

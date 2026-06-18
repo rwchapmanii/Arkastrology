@@ -1069,7 +1069,7 @@ class NatalInterpretationService:
         if not annual_profection:
             return None
         house_meta = cls._house_meta(ontology, annual_profection.activated_house)
-        topics = cls._topic_phrase(house_meta.get("modern_topics", []) or house_meta.get("classical_topics", []), 3)
+        topics = cls._topic_phrase(house_meta.get("classical_topics", []) or house_meta.get("modern_topics", []), 3)
         year_lord = cls._find_planet(chart_data, annual_profection.lord_of_year)
         timeframe = ""
         if annual_profection.starts_at and annual_profection.ends_at:
@@ -1324,7 +1324,7 @@ class NatalInterpretationService:
                 f"the Sun describes identity, purpose, and the kind of life direction that feels most like you"
             ),
             real_life=(
-                f"you may keep putting serious effort into {cls._topic_phrase(house_meta.get('modern_topics', []))}, because your Sun is in {cls._title_from_house(house_meta, sun.house)}"
+                f"you may keep putting serious effort into {cls._topic_phrase(house_meta.get('classical_topics', []) or house_meta.get('modern_topics', []))}, because your Sun is in {cls._title_from_house(house_meta, sun.house)}"
             ),
             watch_for=(
                 "putting so much pressure on yourself to perform or succeed that your worth gets tied only to results"
@@ -1359,7 +1359,7 @@ class NatalInterpretationService:
                 "the Moon shows how you react, what helps you feel safe, and where your feelings naturally go under stress"
             ),
             real_life=(
-                f"your feelings may keep gathering around {cls._topic_phrase(house_meta.get('modern_topics', []))}, because the Moon is in {cls._title_from_house(house_meta, moon.house)}"
+                f"your feelings may keep gathering around {cls._topic_phrase(house_meta.get('classical_topics', []) or house_meta.get('modern_topics', []))}, because the Moon is in {cls._title_from_house(house_meta, moon.house)}"
             ),
             watch_for=(
                 "falling into emotional habits that feel familiar but make it harder to say what you actually need"
@@ -1411,7 +1411,7 @@ class NatalInterpretationService:
     def _build_ontology_signature_block(cls, chart_data: NatalTechnicalChart, ontology: Dict) -> InterpretationBlock:
         balance = cls._element_and_modality_balance(chart_data, ontology)
         dominant_house_id, dominant_house_meta, count = cls._dominant_house_meta(chart_data, ontology)
-        house_topics = cls._topic_phrase(dominant_house_meta.get("modern_topics", []), 3)
+        house_topics = cls._topic_phrase(dominant_house_meta.get("classical_topics", []) or dominant_house_meta.get("modern_topics", []), 3)
         balance_phrase = f"the chart has a strong {balance['element']} tone and a {balance['modality']} style"
         summary = cls._teaching_summary(
             meaning=(
@@ -1475,7 +1475,7 @@ class NatalInterpretationService:
         blocks: List[InterpretationBlock] = []
         for house_id, count in ranked_houses:
             house_meta = houses.get(cls._house_number(house_id), {})
-            topics = cls._topic_phrase(house_meta.get("modern_topics", []), 3)
+            topics = cls._topic_phrase(house_meta.get("classical_topics", []) or house_meta.get("modern_topics", []), 3)
             blocks.append(
                 InterpretationBlock(
                     block_type="house_focus",
@@ -1548,7 +1548,7 @@ class NatalInterpretationService:
                 f"this tells you how the {planet.id.lower()} part of your personality operates"
             ),
             real_life=(
-                f"you will especially notice it in {cls._topic_phrase(house_meta.get('modern_topics', []))}, because {planet.id} sits in {cls._title_from_house(house_meta, planet.house)}"
+                f"you will especially notice it in {cls._topic_phrase(house_meta.get('classical_topics', []) or house_meta.get('modern_topics', []))}, because {planet.id} sits in {cls._title_from_house(house_meta, planet.house)}"
             ),
             watch_for=(
                 f"using the lower expression of {planet.id.lower()} when pressure rises, instead of its wiser and steadier side"
@@ -1663,7 +1663,7 @@ class NatalInterpretationService:
             return None
         houses = cls._house_lookup(ontology)
         house_meta = houses.get(cls._house_number(moon.house), {})
-        topics = cls._topic_phrase(house_meta.get("modern_topics", []))
+        topics = cls._topic_phrase(house_meta.get("classical_topics", []) or house_meta.get("modern_topics", []))
         summary = cls._teaching_summary(
             meaning=f"dreams, images, and repeated moods around {topics} may be carrying useful meaning",
             why="this gives you a reflective way to learn from the chart instead of only analyzing it intellectually",
@@ -1817,7 +1817,7 @@ class NatalInterpretationService:
         asc = cls._find_angle(chart_data, "Asc")
         dominant_house_id, dominant_house_meta, _ = cls._dominant_house_meta(chart_data, ontology)
         dominant_house_title = cls._title_from_house(dominant_house_meta, dominant_house_id)
-        dominant_topics = cls._topic_phrase(dominant_house_meta.get("modern_topics", []), 3)
+        dominant_topics = cls._topic_phrase(dominant_house_meta.get("classical_topics", []) or dominant_house_meta.get("modern_topics", []), 3)
         strongest_aspect = chart_data.aspects[0] if chart_data.aspects else None
         balance = cls._element_and_modality_balance(chart_data, ontology)
 
@@ -2056,7 +2056,7 @@ class NatalInterpretationService:
         return ReadingSection(
             headline=f"Simple natal guide: {sun.sign if sun else 'solar'} core, {moon.sign if moon else 'lunar'} emotional tone.",
             practical_meaning=blocks[0].summary if blocks else "Planetary fallback is available.",
-            psychological_meaning=blocks[1].summary if len(blocks) > 1 else "This mode keeps to the stable planetary layer.",
+            life_translation=blocks[1].summary if len(blocks) > 1 else "This mode keeps to the stable planetary layer.",
             guidance=cards[0].summary if cards else "Use the stable planetary layer first until the birth time is confirmed.",
             prompt=(blocks[-1].summary if include_red_book_prompts and blocks else None),
             timing_focus="Timing stays general in fallback mode until the birth time is verified.",
@@ -2105,9 +2105,11 @@ class NatalInterpretationService:
                 blocks.append(block)
 
         blocks.append(cls._build_ontology_signature_block(chart_data, ontology))
-        levi_block = cls._build_levi_current_block(chart_data, ontology)
-        if levi_block:
-            blocks.append(levi_block)
+        if include_jungian:
+            levi_block = cls._build_levi_current_block(chart_data, ontology)
+            if levi_block:
+                levi_block.title = levi_block.title.replace("Main symbolic theme", "Supplemental symbolic theme", 1)
+                blocks.append(levi_block)
 
         blocks.extend(cls._build_house_concentration_blocks(chart_data, ontology))
         blocks.extend(cls._build_major_aspect_blocks(chart_data, ontology, include_jungian))
@@ -2183,7 +2185,7 @@ class NatalInterpretationService:
             return ReadingSection(
                 headline=headline,
                 practical_meaning=year_map_block.summary if year_map_block else (foundation_block.summary if foundation_block else "Traditional chart structure is available."),
-                psychological_meaning=fortune_spirit_block.summary if fortune_spirit_block else (solar_return_block.summary if solar_return_block else "Fortune and Spirit are available for contextual judgment."),
+                life_translation=fortune_spirit_block.summary if fortune_spirit_block else (solar_return_block.summary if solar_return_block else "Fortune and Spirit are available for contextual judgment."),
                 guidance=prediction_cards[0].summary if prediction_cards else "Read repeated testimony before making a strong claim.",
                 prompt=prompt,
                 timing_focus=prediction_cards[0].summary if prediction_cards else None,
@@ -2203,15 +2205,15 @@ class NatalInterpretationService:
         aspect_block = next((block for block in blocks if block.block_type == "major_aspect"), None)
 
         if include_jungian and mapping_block:
-            psychological = mapping_block.summary
+            life_translation = mapping_block.summary
         elif lunar_block:
-            psychological = lunar_block.summary
+            life_translation = lunar_block.summary
         elif aspect_block:
-            psychological = aspect_block.summary
+            life_translation = aspect_block.summary
         elif levi_block:
-            psychological = levi_block.summary
+            life_translation = levi_block.summary
         else:
-            psychological = "Psychological interpretation layer is available."
+            life_translation = "The chart's inner patterns can be translated into lived experience without overriding the structural reading."
 
         if prediction_cards:
             guidance = prediction_cards[0].summary
@@ -2228,7 +2230,7 @@ class NatalInterpretationService:
         ritual_focus = "; ".join(prediction_cards[0].rituals[:2]) if prediction_cards else None
         oracle = None
         if levi_block:
-            oracle = f"The Ark names this chart's current as {levi_block.title.replace('Levi current: ', '').lower()}."
+            oracle = f"The Ark names this chart's supplemental symbolic theme as {levi_block.title.replace('Supplemental symbolic theme: ', '').lower()}."
 
         headline = (
             f"Your chart begins with {cls._with_article(sun.sign if sun else 'solar')} core, "
@@ -2238,7 +2240,7 @@ class NatalInterpretationService:
         return ReadingSection(
             headline=headline,
             practical_meaning=practical,
-            psychological_meaning=psychological,
+            life_translation=life_translation,
             guidance=guidance,
             prompt=prompt,
             timing_focus=prediction_cards[0].summary if prediction_cards else None,

@@ -5,7 +5,8 @@ export type PersonSlot = 'primary' | 'secondary';
 export type ReadingSection = {
   headline: string;
   practical_meaning: string;
-  psychological_meaning: string;
+  life_translation?: string | null;
+  psychological_meaning?: string | null;
   guidance: string;
   prompt?: string | null;
   timing_focus?: string | null;

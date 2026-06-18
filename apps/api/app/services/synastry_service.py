@@ -121,23 +121,23 @@ class SynastryReadingService:
             SourceLens(
                 lens="traditional_core",
                 labels=[
-                    "Traditional core currently used: each natal chart includes sect, house rulers, planetary condition, and Fortune/Spirit",
-                    "Traditional core currently used: annual profections and solar returns are exposed per person before relationship synthesis",
+                    "Ancient and traditional core: each natal chart includes sect, house rulers, planetary condition, and Fortune/Spirit",
+                    "Traditional timing core: annual profections and solar returns are exposed per person before relationship synthesis",
                     "Traditional method: relationship judgment should rest on natal structure before cross-chart interpretation",
                 ],
             ),
             SourceLens(
                 lens="relationship_synthesis",
                 labels=[
-                    "Current synastry layer: prose begins with each person's natal condition, activated house, year lord, and solar return emphasis",
-                    "Current synastry layer: cross-chart aspects are judged after the natal frames and yearly activations are established",
-                    "Current synastry layer: relationship topics are judged by each person's natal topic condition, then by ruler contacts, helper planets, and yearly activation",
+                    "Relationship synthesis: prose begins with each person's natal condition, activated house, year lord, and solar return emphasis",
+                    "Relationship synthesis: cross-chart aspects are judged after the natal frames and yearly activations are established",
+                    "Relationship synthesis: relationship topics are judged by each person's natal topic condition, then by ruler contacts, helper planets, and yearly activation",
                 ],
             ),
             SourceLens(
                 lens="app_synthesis",
                 labels=[
-                    "App synthesis currently used: symbolic correspondence language is supplemental and must not override structural relationship testimony",
+                    "App synthesis: explanatory relationship language is supplemental and must not override structural testimony",
                 ],
             ),
             SourceLens(
@@ -153,8 +153,8 @@ class SynastryReadingService:
                 SourceLens(
                     lens="modern_psychology",
                     labels=[
-                        "Modern optional layer: Jungian projection and mirror language",
-                        "Modern optional layer: psychology should not override chart structure",
+                        "Modern optional overlay: Jungian projection and mirror language",
+                        "Modern optional overlay: psychology does not override chart structure",
                     ],
                 )
             )
@@ -198,7 +198,7 @@ class SynastryReadingService:
         if not house_number:
             return "life themes"
         house_meta = cls._house_lookup(ontology).get(house_number, {})
-        return cls._topic_phrase(house_meta.get("modern_topics", []) or house_meta.get("classical_topics", []), 3)
+        return cls._topic_phrase(house_meta.get("classical_topics", []) or house_meta.get("modern_topics", []), 3)
 
     @classmethod
     def _sign_distance(cls, start_sign: str, end_sign: str) -> int:
@@ -1904,10 +1904,11 @@ class SynastryReadingService:
         ]
         blocks.extend(cls._aspect_blocks(generic_aspects, include_jungian)[:3])
 
-        levi_block = cls._levi_current_block(primary_chart, secondary_chart, aspects, ontology)
-        if levi_block:
-            levi_block.title = levi_block.title.replace("Main symbolic theme", "Supplemental symbolic theme", 1)
-            blocks.append(levi_block)
+        if include_jungian:
+            levi_block = cls._levi_current_block(primary_chart, secondary_chart, aspects, ontology)
+            if levi_block:
+                levi_block.title = levi_block.title.replace("Main symbolic theme", "Supplemental symbolic theme", 1)
+                blocks.append(levi_block)
 
         if include_red_book_prompts:
             blocks.append(cls._red_book_block(primary, secondary))
@@ -2043,7 +2044,7 @@ class SynastryReadingService:
         reading = ReadingSection(
             headline="The Ark synastry instrument is ready.",
             practical_meaning="The API can resolve both birth contexts and compare two charts once sufficient inputs are present.",
-            psychological_meaning="The Ark treats synastry as natal structure first, cross-chart contact second, and optional modern overlays after that.",
+            life_translation="The Ark treats synastry as natal structure first, cross-chart contact second, and optional modern overlays after that.",
             guidance="Provide accurate birth context for both people so the relational prediction layer becomes specific.",
             prompt="What is truly happening between the two people, and what is being carried by symbol, wish, or projection?",
             oracle="The Ark is waiting for enough context to name the bond's live current.",
@@ -2128,7 +2129,7 @@ class SynastryReadingService:
                     reading = ReadingSection(
                         headline=f"Relationship reading in simple mode: {primary_profile.name} and {secondary_profile.name}.",
                         practical_meaning=prediction_cards[0].summary if prediction_cards else "A simpler relationship reading is available.",
-                        psychological_meaning="This simpler mode focuses on the most stable planet-to-planet patterns and avoids house or angle claims until both birth times are exact.",
+                        life_translation="This simpler mode focuses on the most stable planet-to-planet patterns and avoids house or angle claims until both birth times are exact.",
                         guidance=prediction_cards[1].summary if len(prediction_cards) > 1 else "Confirm both birth times before relying on more detailed relationship timing or house-based claims.",
                         prompt="Which birth time is still missing or uncertain?",
                         timing_focus="Simple mode keeps the relationship reading focused on the most reliable shared patterns.",
@@ -2303,7 +2304,7 @@ class SynastryReadingService:
                         if prediction_cards else
                         "This reading compares both birth charts by starting with each person's natal condition and current yearly activation."
                     ),
-                    psychological_meaning=(
+                    life_translation=(
                         topic_block.summary
                         if topic_block else (
                             climate_block.summary

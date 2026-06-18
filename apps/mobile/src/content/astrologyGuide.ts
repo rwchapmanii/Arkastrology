@@ -97,17 +97,17 @@ export const astrologyGuideSections: GuideSection[] = [
     ],
     bullets: [
       '1st House: identity, presence, self-presentation',
-      '2nd House: money, value, self-worth',
-      '3rd House: communication, learning, writing',
-      '4th House: family, roots, inner base',
+      '2nd House: money, possessions, livelihood, support',
+      '3rd House: siblings, messages, local travel, study',
+      '4th House: home, parents, land, roots',
       '5th House: joy, romance, creativity, performance',
-      '6th House: work routines, health, repair',
+      '6th House: labor, illness, service, repair',
       '7th House: committed relationships, contracts, mirroring',
-      '8th House: shared resources, crisis, transformation',
-      '9th House: belief, study, worldview',
+      '8th House: inheritance, fear, debt, other people’s resources',
+      '9th House: belief, long travel, higher study, worldview',
       '10th House: career, status, calling',
       '11th House: community, networks, future aims',
-      '12th House: unconscious material, solitude, dream life'
+      '12th House: hidden pressures, retreat, isolation, and what stays behind the scenes'
     ]
   },
   {
