@@ -83,27 +83,25 @@ export function DetailScreen({ block, onBack }: { block: InterpretationBlock; on
   const doctrine = block.traditional_doctrine;
   const evidenceLines = block.chart_evidence?.length ? block.chart_evidence : [];
   const useInLife = block.life_translation || realLifeExample(block);
-  const whyThisMatters = block.why_this_matters;
   const confidenceText = confidenceSummary(block);
 
   return (
     <>
-      <SurfaceCard title="Learn this part of the reading" subtitle={prettyBlockType(block.block_type)} accent>
+      <SurfaceCard title={block.title} subtitle={prettyBlockType(block.block_type)} accent>
         <View style={styles.heroRow}>
           <View style={styles.iconWrap}>{renderBlockIcon(block.block_type, 24)}</View>
           <View style={styles.textWrap}>
             <Text style={styles.title}>{block.title}</Text>
-            <Text style={styles.subtitle}>This screen slows the reading down so you can focus on one placement or pattern at a time.</Text>
+            <Text style={styles.subtitle}>{prettyBlockType(block.block_type)}</Text>
           </View>
         </View>
         {block.confidence ? <Text style={styles.confidence}>{block.confidence.charAt(0).toUpperCase() + block.confidence.slice(1)} confidence</Text> : null}
         <GlossaryText text={mainMeaning} textStyle={styles.summary} />
-        {whyThisMatters ? <GlossaryText text={`Why this matters: ${whyThisMatters}`} textStyle={styles.why} /> : null}
         {confidenceText ? <GlossaryText text={confidenceText} textStyle={styles.supporting} /> : null}
       </SurfaceCard>
 
       {doctrine ? (
-        <SurfaceCard title="Traditional rule" subtitle="This is the doctrine underneath the plain-language reading.">
+        <SurfaceCard title="Traditional rule" subtitle="The doctrine underneath this reading.">
           <GlossaryText text={doctrine} textStyle={styles.summary} />
         </SurfaceCard>
       ) : null}
@@ -175,8 +173,8 @@ export function DetailScreen({ block, onBack }: { block: InterpretationBlock; on
         </SurfaceCard>
       ) : null}
 
-      <SurfaceCard title="How to use this" subtitle="A good reading teaches in layers. You do not need to understand everything at once.">
-        <Text style={styles.summary}>Start with the plain meaning. Then notice where it fits real life. If the wording feels abstract, come back to the chart evidence and the life translation instead of trying to memorize doctrine all at once.</Text>
+      <SurfaceCard title="How to use this" subtitle="Move from the main interpretation into the supporting evidence as needed.">
+        <Text style={styles.summary}>Start with the main interpretation. Then notice where it fits real life. If the wording feels abstract, come back to the chart evidence and the life translation instead of trying to memorize doctrine all at once.</Text>
       </SurfaceCard>
 
       <SecondaryButton label="Back to reading" onPress={onBack} icon={<Feather name="arrow-left" size={15} color={palette.ink} />} />
@@ -192,7 +190,6 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13, lineHeight: 18, color: palette.muted },
   confidence: { fontSize: 13, lineHeight: 18, color: palette.muted, fontWeight: '700' },
   summary: { fontSize: 16, lineHeight: 26, color: palette.ink },
-  why: { fontSize: 15, lineHeight: 23, color: palette.ink, fontWeight: '700' },
   supporting: { fontSize: 14, lineHeight: 22, color: palette.muted },
   evidenceStack: { gap: 14 },
   evidenceCard: { gap: 8, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: palette.border, backgroundColor: palette.surface },

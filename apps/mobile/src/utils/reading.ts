@@ -8,6 +8,9 @@ const TEXT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/Mixed testimony repeats here with medium confidence\.?/gi, 'The testimony here is mixed.'],
   [/constructive support rather than standing alone/gi, 'real support rather than being left to stand alone'],
   [/Tetrabiblos:\s*planetary quality/gi, 'Source note: classical planetary condition'],
+  [/In plain language,\s*/gi, ''],
+  [/plain language/gi, 'direct terms'],
+  [/plain-English/gi, 'direct'],
 ];
 
 function cleanString(value?: string | null) {

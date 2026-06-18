@@ -67,7 +67,7 @@ function buildSkyNarrative(result: AnyReadingResponse, contacts: TransitAspectRe
   if (result.chart_type === 'synastry') {
     const owner = top.natal_owner === 'primary' ? 'Person A' : top.natal_owner === 'secondary' ? 'Person B' : 'the relationship';
     const second = contacts[1];
-    const firstParagraph = `Right now, the sky is leaning most strongly on ${owner}. ${firstLine} In plain language, this means the relationship may feel more emotionally charged, revealing, or active in that area than usual.`;
+    const firstParagraph = `Right now, the sky is leaning most strongly on ${owner}. ${firstLine} The relationship may feel more emotionally charged, revealing, or active in that area than usual.`;
     if (!second) return [firstParagraph];
     const secondOwner = second.natal_owner === 'primary' ? 'Person A' : second.natal_owner === 'secondary' ? 'Person B' : 'the relationship';
     const secondParagraph = `${second.transit_body} ${simpleAspectMeaning(second.type)} ${secondOwner === 'the relationship' ? 'the relationship' : `${secondOwner.toLowerCase()}'s`} ${second.natal_body.toLowerCase()} themes as well, so both people may be feeling the moment in different but connected ways.`;
@@ -139,7 +139,7 @@ function buildOpeningSummary(result: AnyReadingResponse, strongest?: TopicJudgme
     : 'the active house topics';
   const title = `This is a ${yearMap.activated_house_title || 'current'} year ruled by ${yearMap.lord_of_year || 'its year lord'}.`;
   const paragraphs = [
-    `In plain language, the year keeps drawing attention to ${topicText}. The emphasis is less about isolated events and more about the themes that keep repeating until they are understood and handled consciously.`,
+    `The year keeps drawing attention to ${topicText}. The emphasis is less about isolated events and more about the themes that keep repeating until they are understood and handled consciously.`,
     yearMap.lord_of_year
       ? `${yearMap.lord_of_year} carries the year from ${formatHouseRef(yearMap.lord_of_year_house)}, so that part of life becomes the place where the annual storyline is most likely to become visible, manageable, or meaningful.`
       : null,
@@ -163,13 +163,13 @@ function buildOpeningSummary(result: AnyReadingResponse, strongest?: TopicJudgme
 function buildReadingFlow(result: AnyReadingResponse) {
   return result.chart_type === 'synastry'
     ? [
-        'Start with the opening summary so you know the relationship story in plain language before reading the technique.',
+        'Start with the opening summary so you know the relationship story before reading the technique.',
         'Then move through the relationship cards one concept at a time instead of trying to decode every term at once.',
         'Use the sky card as short-term weather, not the whole relationship reading.',
         'Open the evidence only when you want to see exactly why the app is making a claim.',
       ]
     : [
-        'Start with the plain-English summary first, before looking at the doctrine.',
+        'Start with the opening summary first, before looking at the doctrine.',
         'Then read the timing technique card so you know why this year has its current emphasis.',
         'Use the planet, Fortune/Spirit, and support/strain cards to see what matters most.',
         'Treat the current sky as temporary weather layered on top of the larger year map.',
@@ -261,7 +261,7 @@ export function ReadingScreen({
     <>
       <View style={styles.heroCard}>
         <Text style={styles.eyebrow}>{result.chart_type === 'synastry' ? 'Relationship Reading' : 'Reading'}</Text>
-        <Text style={styles.title}>Your year in plain English</Text>
+        <Text style={styles.title}>Your year</Text>
         <Text style={styles.summaryLead}>{openingSummary.title}</Text>
         {openingSummary.paragraphs.map((paragraph, index) => (
           <GlossaryText key={`${index}-${paragraph.slice(0, 24)}`} text={paragraph} textStyle={styles.body} />
@@ -284,24 +284,24 @@ export function ReadingScreen({
           <Text style={styles.termHint}>Tap underlined terms for quick definitions.</Text>
 
           {annualBlock ? (
-            <SurfaceCard title="Why this year has this theme" subtitle="Plain meaning first, technique second.">
+            <SurfaceCard title="Why this year has this theme" subtitle="Annual timing and emphasis.">
               <GlossaryText text={annualBlock.plain_meaning || annualBlock.summary} textStyle={styles.body} />
-              {annualBlock.why_this_matters ? <GlossaryText text={`Why this matters: ${annualBlock.why_this_matters}`} textStyle={styles.whyLine} /> : null}
+              {annualBlock.why_this_matters ? <GlossaryText text={annualBlock.why_this_matters} textStyle={styles.whyLine} /> : null}
               {annualBlock.traditional_doctrine ? <GlossaryText text={annualBlock.traditional_doctrine} textStyle={styles.supporting} /> : null}
             </SurfaceCard>
           ) : null}
 
           {yearMapBlock ? (
-            <SurfaceCard title="The planet carrying the year" subtitle="This is the planet responsible for carrying the main storyline from one birthday to the next.">
+            <SurfaceCard title="The planet carrying the year" subtitle="The main planet shaping the year.">
               <GlossaryText text={yearMapBlock.plain_meaning || yearMapBlock.summary} textStyle={styles.body} />
-              {yearMapBlock.why_this_matters ? <GlossaryText text={`Why this matters: ${yearMapBlock.why_this_matters}`} textStyle={styles.whyLine} /> : null}
+              {yearMapBlock.why_this_matters ? <GlossaryText text={yearMapBlock.why_this_matters} textStyle={styles.whyLine} /> : null}
             </SurfaceCard>
           ) : null}
 
           {fortuneBlock ? (
             <SurfaceCard title="What happens to you vs. what you choose" subtitle="Fortune shows circumstance. Spirit shows chosen direction.">
               <GlossaryText text={fortuneBlock.plain_meaning || fortuneBlock.summary} textStyle={styles.body} />
-              {fortuneBlock.why_this_matters ? <GlossaryText text={`Why this matters: ${fortuneBlock.why_this_matters}`} textStyle={styles.whyLine} /> : null}
+              {fortuneBlock.why_this_matters ? <GlossaryText text={fortuneBlock.why_this_matters} textStyle={styles.whyLine} /> : null}
             </SurfaceCard>
           ) : null}
 
@@ -353,7 +353,7 @@ export function ReadingScreen({
             <SecondaryButton label="Open full chart details" onPress={onOpenTechnical} icon={<MaterialCommunityIcons name="chart-bubble" size={17} color={palette.ink} />} />
           </SurfaceCard>
 
-          <SurfaceCard title="Learn each part of your reading" subtitle="Each card starts with plain meaning, then opens into doctrine and evidence.">
+          <SurfaceCard title="Reading details" subtitle="Open any card for the supporting doctrine and evidence.">
             {blocks.map((block) => (
               <InterpretationCard key={`${block.block_type}-${block.repeat_key || block.title}`} block={block} onPress={() => onOpenDetail(block)} />
             ))}
@@ -401,7 +401,7 @@ export function ReadingScreen({
         </>
       ) : (
         <>
-          <SurfaceCard title="How to read this page" subtitle="The reading now teaches one concept at a time.">
+          <SurfaceCard title="How to read this page" subtitle="Move through the reading one section at a time.">
             <View style={styles.flowStack}>
               {readingFlow.map((step, index) => (
                 <Text key={step} style={styles.flowText}><Text style={styles.flowIndex}>{index + 1}. </Text>{step}</Text>
@@ -409,7 +409,7 @@ export function ReadingScreen({
             </View>
           </SurfaceCard>
 
-          <SurfaceCard title="Learn each part of your reading" subtitle="Each concept starts in plain language, then expands into traditional doctrine.">
+          <SurfaceCard title="Reading details" subtitle="Each concept expands into traditional doctrine and evidence.">
             <View style={styles.glossaryWrap}>
               {guideCards.map((block) => (
                 <View key={block.title} style={styles.glossaryCard}>

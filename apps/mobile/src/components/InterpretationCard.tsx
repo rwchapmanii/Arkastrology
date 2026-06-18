@@ -11,7 +11,7 @@ function confidenceLabel(block: InterpretationBlock) {
 
 export function InterpretationCard({ block, onPress }: { block: InterpretationBlock; onPress: () => void }) {
   const preview = block.plain_meaning || block.summary;
-  const whyThisMatters = block.why_this_matters || block.life_translation;
+  const supportingLine = block.life_translation;
 
   return (
     <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} onPress={onPress}>
@@ -21,7 +21,7 @@ export function InterpretationCard({ block, onPress }: { block: InterpretationBl
           <Text style={styles.title}>{block.title}</Text>
           {block.confidence ? <Text style={styles.confidence}>{confidenceLabel(block)}</Text> : null}
           <Text style={styles.preview} numberOfLines={3}>{preview}</Text>
-          {whyThisMatters ? <Text style={styles.why} numberOfLines={2}>Why this matters: {whyThisMatters}</Text> : null}
+          {supportingLine ? <Text style={styles.why} numberOfLines={2}>{supportingLine}</Text> : null}
         </View>
       </View>
     </Pressable>

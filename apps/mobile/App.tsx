@@ -38,7 +38,7 @@ export default function App() {
   const accountProfile = useAccountProfile(authState);
 
   const [screenMode, setScreenMode] = useState<ScreenMode>('auth');
-  const [authMode, setAuthMode] = useState<'sign in' | 'register'>('sign in');
+  const [authMode, setAuthMode] = useState<'sign in' | 'register' | 'reset'>('sign in');
   const [selectedBlock, setSelectedBlock] = useState<InterpretationBlock | null>(null);
   const [emailDraft, setEmailDraft] = useState('');
   const [passwordDraft, setPasswordDraft] = useState('');
@@ -183,6 +183,7 @@ export default function App() {
       const debugNote = response.prototype_token ? ` Debug token: ${response.prototype_token}.` : '';
       workspace.setSaveMessage(`${response.notes.join(' ')} Delivery mode: ${response.delivery_mode}.${debugNote}`.trim());
       workspace.setError(null);
+      setAuthMode('reset');
     } catch (err) {
       workspace.setError(err instanceof Error ? err.message : 'Could not request password reset.');
     }
@@ -196,6 +197,7 @@ export default function App() {
       setPasswordDraft('');
       setNewPasswordDraft('');
       setResetTokenDraft('');
+      setAuthMode('sign in');
       setScreenMode('auth');
     } catch (err) {
       workspace.setError(err instanceof Error ? err.message : 'Could not reset password.');
@@ -217,12 +219,18 @@ export default function App() {
           <AuthScreen
             email={emailDraft}
             password={passwordDraft}
+            resetToken={resetTokenDraft}
+            newPassword={newPasswordDraft}
             authMode={authMode}
             onEmailChange={setEmailDraft}
             onPasswordChange={setPasswordDraft}
+            onResetTokenChange={setResetTokenDraft}
+            onNewPasswordChange={setNewPasswordDraft}
             onAuthModeChange={setAuthMode}
             onSignIn={() => void handleAuth('sign in')}
             onRegister={() => void handleAuth('register')}
+            onRequestPasswordReset={() => void handleRequestPasswordReset()}
+            onConfirmPasswordReset={() => void handleConfirmPasswordReset()}
           />
         </View>
       );
