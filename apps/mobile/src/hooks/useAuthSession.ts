@@ -13,7 +13,7 @@ import {
 } from '../services/api';
 import { clearStoredAuthToken, getStoredAuthToken, setStoredAuthToken } from '../services/secureStorage';
 import { AuthState } from '../types/app';
-import { AUTH_STORAGE_KEY, LEGACY_AUTH_STORAGE_KEYS, defaultAuthState } from '../utils/app';
+import { AUTH_STORAGE_KEY, LEGACY_AUTH_STORAGE_KEYS, defaultAuthState, resolveApiBaseUrl } from '../utils/app';
 
 async function readStoredAuthState() {
   const current = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
@@ -48,7 +48,7 @@ function buildSessionState(session: {
     userId: session.account.user_id,
     email: session.account.email,
     token,
-    apiBaseUrl: apiBaseUrl.trim(),
+    apiBaseUrl: resolveApiBaseUrl(apiBaseUrl),
     displayName: session.account.display_name ?? undefined,
     plan: session.account.plan,
     sessionExpiresAt: session.session_expires_at,
@@ -85,6 +85,7 @@ export function useAuthSession() {
           ...defaultAuthState,
           ...rawParsed,
           token: secureToken || undefined,
+          apiBaseUrl: resolveApiBaseUrl(rawParsed.apiBaseUrl),
           preferences: {
             ...defaultAuthState.preferences,
             ...(rawParsed.preferences || {}),
@@ -135,7 +136,7 @@ export function useAuthSession() {
     const nextState: AuthState = {
       ...defaultAuthState,
       mode: 'guest',
-      apiBaseUrl: apiBaseUrl.trim(),
+      apiBaseUrl: resolveApiBaseUrl(apiBaseUrl),
     };
     setAuthState(nextState);
     return nextState;
@@ -189,7 +190,7 @@ export function useAuthSession() {
       const response = await updateAccountPreferences(apiBaseUrl, authState.token, updates);
       const nextState: AuthState = {
         ...authState,
-        apiBaseUrl: apiBaseUrl.trim(),
+        apiBaseUrl: resolveApiBaseUrl(apiBaseUrl),
         preferences: response.preferences,
       };
       setAuthState(nextState);
@@ -199,7 +200,7 @@ export function useAuthSession() {
     const nextState: AuthState = {
       ...authState,
       mode: authState.mode === 'signed_out' ? 'guest' : authState.mode,
-      apiBaseUrl: apiBaseUrl.trim(),
+      apiBaseUrl: resolveApiBaseUrl(apiBaseUrl),
       preferences: {
         ...authState.preferences,
         ...updates,

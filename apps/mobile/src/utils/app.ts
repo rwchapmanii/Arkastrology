@@ -17,6 +17,13 @@ function isLoopbackUrl(value: string) {
   return /https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(normalizeUrl(value));
 }
 
+function isNonLocalWebRuntime() {
+  return Platform.OS === 'web'
+    && typeof window !== 'undefined'
+    && window.location.hostname !== 'localhost'
+    && window.location.hostname !== '127.0.0.1';
+}
+
 export function getDefaultApiBaseUrl() {
   const configured = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
   if (configured) return normalizeUrl(configured);
@@ -34,6 +41,11 @@ export function getDefaultApiBaseUrl() {
 }
 
 export function resolveApiBaseUrl(candidate?: string) {
+  const configured = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
+  if (configured && isNonLocalWebRuntime()) {
+    return normalizeUrl(configured);
+  }
+
   const cleanCandidate = candidate?.trim();
   if (!cleanCandidate) {
     return getDefaultApiBaseUrl();
@@ -41,12 +53,9 @@ export function resolveApiBaseUrl(candidate?: string) {
 
   const normalizedCandidate = normalizeUrl(cleanCandidate);
   if (
-    Platform.OS === 'web' &&
-    typeof window !== 'undefined' &&
-    window.location.hostname !== 'localhost' &&
-    window.location.hostname !== '127.0.0.1' &&
+    isNonLocalWebRuntime() &&
     isLoopbackUrl(normalizedCandidate) &&
-    !process.env.EXPO_PUBLIC_API_BASE_URL?.trim()
+    !configured
   ) {
     return getDefaultApiBaseUrl();
   }
