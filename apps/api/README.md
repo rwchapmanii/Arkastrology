@@ -56,7 +56,7 @@ If no OpenAI key is configured, grounded chat still works, but it uses a local d
 1. Open `apps/api/.env`
 2. Set:
    - `OPENAI_API_KEY=<your api key>`
-   - `OPENAI_CHAT_MODEL=<reasoning-capable model>`
+   - optional: `OPENAI_CHAT_MODEL=gpt-5.5`
    - optional: `OPENAI_REASONING_EFFORT=high`
 3. Restart or redeploy the API
 

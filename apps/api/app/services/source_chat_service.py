@@ -85,7 +85,7 @@ def _openai_api_key() -> str:
 
 
 def _openai_model() -> str:
-    return (os.getenv("OPENAI_CHAT_MODEL") or "gpt-5-mini").strip()
+    return (os.getenv("OPENAI_CHAT_MODEL") or "gpt-5.5").strip()
 
 
 def _openai_reasoning_effort() -> str:
