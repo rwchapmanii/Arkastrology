@@ -12,6 +12,7 @@ import {
   VerificationConfirmResponse,
 } from '../types/app';
 import { AppDraft, PersonDraft } from '../types/app';
+import { sanitizeReadingHistoryDetailResponse, sanitizeReadingHistoryListResponse, sanitizeReadingResponse } from '../utils/reading';
 
 function buildHeaders(sessionToken?: string, json = true) {
   return {
@@ -209,17 +210,19 @@ export async function fetchReadingHistory(
   if (typeof options.offset === 'number' && options.offset > 0) params.set('offset', String(options.offset));
   if (typeof options.limit === 'number') params.set('limit', String(options.limit));
   const suffix = params.toString() ? `?${params.toString()}` : '';
-  return requestJson<ReadingHistoryListResponse>(baseUrl, `/v1/account/readings${suffix}`, {
+  const response = await requestJson<ReadingHistoryListResponse>(baseUrl, `/v1/account/readings${suffix}`, {
     method: 'GET',
     headers: buildHeaders(sessionToken, false),
   });
+  return sanitizeReadingHistoryListResponse(response);
 }
 
 export async function fetchReadingHistoryItem(baseUrl: string, sessionToken: string, readingId: string) {
-  return requestJson<ReadingHistoryDetailResponse>(baseUrl, `/v1/account/readings/${readingId}`, {
+  const response = await requestJson<ReadingHistoryDetailResponse>(baseUrl, `/v1/account/readings/${readingId}`, {
     method: 'GET',
     headers: buildHeaders(sessionToken, false),
   });
+  return sanitizeReadingHistoryDetailResponse(response);
 }
 
 export async function updateReadingHistoryItem(
@@ -254,9 +257,10 @@ export async function requestReading(baseUrl: string, draft: AppDraft, sessionTo
         include_red_book_prompts: draft.includeRedBookPrompts,
       };
 
-  return requestJson<AnyReadingResponse>(baseUrl, path, {
+  const response = await requestJson<AnyReadingResponse>(baseUrl, path, {
     method: 'POST',
     headers: buildHeaders(sessionToken),
     body: JSON.stringify(body),
   });
+  return sanitizeReadingResponse(response);
 }

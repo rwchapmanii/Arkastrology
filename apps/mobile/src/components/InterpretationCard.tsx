@@ -24,7 +24,6 @@ export function InterpretationCard({ block, onPress }: { block: InterpretationBl
           {whyThisMatters ? <Text style={styles.why} numberOfLines={2}>Why this matters: {whyThisMatters}</Text> : null}
         </View>
       </View>
-      {block.technical_terms?.length ? <Text style={styles.citations}>{block.technical_terms.join(' • ')}</Text> : null}
     </Pressable>
   );
 }
@@ -55,5 +54,4 @@ const styles = StyleSheet.create({
   confidence: { fontSize: 11, lineHeight: 15, color: palette.success, fontWeight: '700' },
   preview: { fontSize: 14, lineHeight: 21, color: palette.muted },
   why: { fontSize: 12, lineHeight: 18, color: palette.ink, fontWeight: '600' },
-  citations: { fontSize: 12, lineHeight: 18, color: palette.muted },
 });

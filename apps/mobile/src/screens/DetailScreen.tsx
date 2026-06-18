@@ -1,8 +1,10 @@
 import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { GlossaryText } from '../components/GlossaryText';
 import { palette } from '../constants/theme';
 import { SecondaryButton, SurfaceCard, renderBlockIcon } from '../components/common';
+import { glossaryDefinition } from '../utils/reading';
 import { InterpretationBlock } from '../types/app';
 
 function prettyBlockType(value: string) {
@@ -95,14 +97,14 @@ export function DetailScreen({ block, onBack }: { block: InterpretationBlock; on
           </View>
         </View>
         {block.confidence ? <Text style={styles.confidence}>{block.confidence.charAt(0).toUpperCase() + block.confidence.slice(1)} confidence</Text> : null}
-        <Text style={styles.summary}>{mainMeaning}</Text>
-        {whyThisMatters ? <Text style={styles.why}>Why this matters: {whyThisMatters}</Text> : null}
-        {confidenceText ? <Text style={styles.supporting}>{confidenceText}</Text> : null}
+        <GlossaryText text={mainMeaning} textStyle={styles.summary} />
+        {whyThisMatters ? <GlossaryText text={`Why this matters: ${whyThisMatters}`} textStyle={styles.why} /> : null}
+        {confidenceText ? <GlossaryText text={confidenceText} textStyle={styles.supporting} /> : null}
       </SurfaceCard>
 
       {doctrine ? (
         <SurfaceCard title="Traditional rule" subtitle="This is the doctrine underneath the plain-language reading.">
-          <Text style={styles.summary}>{doctrine}</Text>
+          <GlossaryText text={doctrine} textStyle={styles.summary} />
         </SurfaceCard>
       ) : null}
 
@@ -110,22 +112,22 @@ export function DetailScreen({ block, onBack }: { block: InterpretationBlock; on
         <SurfaceCard title="Chart evidence" subtitle="These are the specific chart facts supporting this part of the reading.">
           <View style={styles.caveatStack}>
             {evidenceLines.map((line) => (
-              <Text key={line} style={styles.summary}>• {line}</Text>
+              <GlossaryText key={line} text={`• ${line}`} textStyle={styles.summary} />
             ))}
           </View>
         </SurfaceCard>
       ) : null}
 
       <SurfaceCard title="What it may look like in life" subtitle="Use this as a bridge between symbolic language and everyday experience.">
-        <Text style={styles.summary}>{useInLife}</Text>
+        <GlossaryText text={useInLife} textStyle={styles.summary} />
       </SurfaceCard>
 
       {block.caveat || block.caveats.length ? (
         <SurfaceCard title="Caveat" subtitle="Traditional astrology points to emphasis and pattern, not mechanical certainty.">
           <View style={styles.caveatStack}>
-            {block.caveat ? <Text style={styles.summary}>• {block.caveat}</Text> : null}
+            {block.caveat ? <GlossaryText text={`• ${block.caveat}`} textStyle={styles.summary} /> : null}
             {block.caveats.map((caveat) => (
-              <Text key={caveat} style={styles.summary}>• {caveat}</Text>
+              <GlossaryText key={caveat} text={`• ${caveat}`} textStyle={styles.summary} />
             ))}
           </View>
         </SurfaceCard>
@@ -152,9 +154,12 @@ export function DetailScreen({ block, onBack }: { block: InterpretationBlock; on
 
       {block.technical_terms?.length ? (
         <SurfaceCard title="Technical terms in this card" subtitle="These are the main traditional terms behind this section.">
-          <View style={styles.citationWrap}>
+          <View style={styles.termCardWrap}>
             {block.technical_terms.map((term) => (
-              <View key={term} style={styles.citationChip}><Text style={styles.citationText}>{term}</Text></View>
+              <View key={term} style={styles.termCard}>
+                <Text style={styles.termTitle}>{term}</Text>
+                <Text style={styles.termMeaning}>{glossaryDefinition(term) || 'This term is part of the traditional reasoning layer behind the card.'}</Text>
+              </View>
             ))}
           </View>
         </SurfaceCard>
@@ -198,5 +203,9 @@ const styles = StyleSheet.create({
   citationWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   citationChip: { borderRadius: 999, backgroundColor: palette.white, borderWidth: 1, borderColor: palette.border, paddingHorizontal: 12, paddingVertical: 7 },
   citationText: { fontSize: 13, color: palette.muted, fontWeight: '600' },
+  termCardWrap: { gap: 10 },
+  termCard: { borderRadius: 14, borderWidth: 1, borderColor: palette.border, backgroundColor: palette.surface, padding: 14, gap: 6 },
+  termTitle: { fontSize: 14, lineHeight: 19, color: palette.ink, fontWeight: '700' },
+  termMeaning: { fontSize: 13, lineHeight: 19, color: palette.muted },
   caveatStack: { gap: 8 },
 });

@@ -1,29 +1,14 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { GlossaryText } from '../components/GlossaryText';
 import { ChartWheel } from '../components/ChartWheel';
 import { InterpretationCard } from '../components/InterpretationCard';
 import { PrimaryButton, SecondaryButton, SurfaceCard } from '../components/common';
 import { palette } from '../constants/theme';
 import { astrologyGuideSections } from '../content/astrologyGuide';
+import { GLOSSARY_ENTRIES } from '../content/glossary';
 import { AnyReadingResponse, InterpretationBlock, TopicJudgmentRecord, TransitAspectRecord } from '../types/app';
-
-type GlossaryEntry = { term: string; meaning: string };
-
-const GLOSSARY: GlossaryEntry[] = [
-  { term: 'Annual profection', meaning: 'A traditional timing technique that moves the focus of life from one house to the next each birthday.' },
-  { term: 'Lord of the year', meaning: 'The planet that rules the activated profection house and carries the main storyline of the year.' },
-  { term: 'Sect', meaning: 'Whether the chart is a day chart or night chart. Sect changes how strongly and constructively certain planets tend to operate.' },
-  { term: 'In sect', meaning: 'A planet is more comfortable because it belongs to the chart’s day or night team.' },
-  { term: 'Contrary to sect', meaning: 'A planet is less comfortable because it is operating outside its preferred day or night condition.' },
-  { term: 'Triplicity dignity', meaning: 'A form of traditional strength based on the element of the sign and whether the chart is day or night.' },
-  { term: 'Succedent', meaning: 'A house with moderate strength: steadier than a cadent house, but less forceful than an angular one.' },
-  { term: 'Fortune', meaning: 'A calculated point connected with the body, circumstances, material conditions, and what happens to the native.' },
-  { term: 'Spirit', meaning: 'A calculated point connected with intention, choice, action, and what the native deliberately pursues.' },
-  { term: 'Mixed testimony', meaning: 'The chart gives both supportive and difficult indications about the same topic.' },
-  { term: 'Bonification', meaning: 'A planet or topic receives help from a benefic such as Jupiter or Venus.' },
-  { term: 'Maltreatment', meaning: 'A planet or topic receives difficult pressure from a malefic such as Mars or Saturn.' },
-];
 
 function formatHouseRef(house?: string | null) {
   if (!house) return 'an unknown house';
@@ -279,7 +264,7 @@ export function ReadingScreen({
         <Text style={styles.title}>Your year in plain English</Text>
         <Text style={styles.summaryLead}>{openingSummary.title}</Text>
         {openingSummary.paragraphs.map((paragraph, index) => (
-          <Text key={`${index}-${paragraph.slice(0, 24)}`} style={styles.body}>{paragraph}</Text>
+          <GlossaryText key={`${index}-${paragraph.slice(0, 24)}`} text={paragraph} textStyle={styles.body} />
         ))}
         {openingSummary.testimony ? <Text style={styles.oracle}>{openingSummary.testimony}</Text> : null}
         {result.reading.oracle ? <Text style={styles.supporting}>{result.reading.oracle}</Text> : null}
@@ -296,25 +281,27 @@ export function ReadingScreen({
 
       {activeTab === 'reading' ? (
         <>
+          <Text style={styles.termHint}>Tap underlined terms for quick definitions.</Text>
+
           {annualBlock ? (
             <SurfaceCard title="Why this year has this theme" subtitle="Plain meaning first, technique second.">
-              <Text style={styles.body}>{annualBlock.plain_meaning || annualBlock.summary}</Text>
-              {annualBlock.why_this_matters ? <Text style={styles.whyLine}>Why this matters: {annualBlock.why_this_matters}</Text> : null}
-              {annualBlock.traditional_doctrine ? <Text style={styles.supporting}>{annualBlock.traditional_doctrine}</Text> : null}
+              <GlossaryText text={annualBlock.plain_meaning || annualBlock.summary} textStyle={styles.body} />
+              {annualBlock.why_this_matters ? <GlossaryText text={`Why this matters: ${annualBlock.why_this_matters}`} textStyle={styles.whyLine} /> : null}
+              {annualBlock.traditional_doctrine ? <GlossaryText text={annualBlock.traditional_doctrine} textStyle={styles.supporting} /> : null}
             </SurfaceCard>
           ) : null}
 
           {yearMapBlock ? (
             <SurfaceCard title="The planet carrying the year" subtitle="This is the planet responsible for carrying the main storyline from one birthday to the next.">
-              <Text style={styles.body}>{yearMapBlock.plain_meaning || yearMapBlock.summary}</Text>
-              {yearMapBlock.why_this_matters ? <Text style={styles.whyLine}>Why this matters: {yearMapBlock.why_this_matters}</Text> : null}
+              <GlossaryText text={yearMapBlock.plain_meaning || yearMapBlock.summary} textStyle={styles.body} />
+              {yearMapBlock.why_this_matters ? <GlossaryText text={`Why this matters: ${yearMapBlock.why_this_matters}`} textStyle={styles.whyLine} /> : null}
             </SurfaceCard>
           ) : null}
 
           {fortuneBlock ? (
             <SurfaceCard title="What happens to you vs. what you choose" subtitle="Fortune shows circumstance. Spirit shows chosen direction.">
-              <Text style={styles.body}>{fortuneBlock.plain_meaning || fortuneBlock.summary}</Text>
-              {fortuneBlock.why_this_matters ? <Text style={styles.whyLine}>Why this matters: {fortuneBlock.why_this_matters}</Text> : null}
+              <GlossaryText text={fortuneBlock.plain_meaning || fortuneBlock.summary} textStyle={styles.body} />
+              {fortuneBlock.why_this_matters ? <GlossaryText text={`Why this matters: ${fortuneBlock.why_this_matters}`} textStyle={styles.whyLine} /> : null}
             </SurfaceCard>
           ) : null}
 
@@ -324,16 +311,16 @@ export function ReadingScreen({
                 <View style={styles.supportBlock}>
                   <Text style={styles.sectionLabel}>Most supported</Text>
                   <Text style={styles.cardTitle}>{strongest.title}</Text>
-                  <Text style={styles.body}>{topicSummary(strongest)}</Text>
-                  {confidenceExplainer(strongest) ? <Text style={styles.supporting}>{confidenceExplainer(strongest)}</Text> : null}
+                  <GlossaryText text={topicSummary(strongest) || ''} textStyle={styles.body} />
+                  {confidenceExplainer(strongest) ? <GlossaryText text={confidenceExplainer(strongest) || ''} textStyle={styles.supporting} /> : null}
                 </View>
               ) : null}
               {strained ? (
                 <View style={styles.supportBlock}>
                   <Text style={styles.sectionLabel}>Most strained</Text>
                   <Text style={styles.cardTitle}>{strained.title}</Text>
-                  <Text style={styles.body}>{topicSummary(strained)}</Text>
-                  {confidenceExplainer(strained) ? <Text style={styles.supporting}>{confidenceExplainer(strained)}</Text> : null}
+                  <GlossaryText text={topicSummary(strained) || ''} textStyle={styles.body} />
+                  {confidenceExplainer(strained) ? <GlossaryText text={confidenceExplainer(strained) || ''} textStyle={styles.supporting} /> : null}
                 </View>
               ) : null}
             </SurfaceCard>
@@ -344,7 +331,7 @@ export function ReadingScreen({
               {transitStamp ? <Text style={styles.transitStamp}>{transitStamp}</Text> : null}
               <View style={styles.flowStack}>
                 {skyNarrative.map((paragraph, index) => (
-                  <Text key={`${index}-${paragraph.slice(0, 20)}`} style={styles.body}>{paragraph}</Text>
+                  <GlossaryText key={`${index}-${paragraph.slice(0, 20)}`} text={paragraph} textStyle={styles.body} />
                 ))}
               </View>
               <View style={styles.contactList}>
@@ -427,8 +414,8 @@ export function ReadingScreen({
               {guideCards.map((block) => (
                 <View key={block.title} style={styles.glossaryCard}>
                   <Text style={styles.glossaryTerm}>{block.title}</Text>
-                  <Text style={styles.glossaryMeaning}>{block.plain_meaning || block.summary}</Text>
-                  {block.traditional_doctrine ? <Text style={styles.supporting}>{block.traditional_doctrine}</Text> : null}
+                  <GlossaryText text={block.plain_meaning || block.summary} textStyle={styles.glossaryMeaning} />
+                  {block.traditional_doctrine ? <GlossaryText text={block.traditional_doctrine} textStyle={styles.supporting} /> : null}
                 </View>
               ))}
             </View>
@@ -436,7 +423,7 @@ export function ReadingScreen({
 
           <SurfaceCard title="Quick term guide" subtitle="Traditional vocabulary should teach, not block understanding.">
             <View style={styles.glossaryWrap}>
-              {GLOSSARY.map((item) => (
+              {GLOSSARY_ENTRIES.map((item) => (
                 <View key={item.term} style={styles.glossaryCard}>
                   <Text style={styles.glossaryTerm}>{item.term}</Text>
                   <Text style={styles.glossaryMeaning}>{item.meaning}</Text>
@@ -501,6 +488,7 @@ const styles = StyleSheet.create({
   tabPillActive: { backgroundColor: palette.accent },
   tabText: { fontSize: 13, lineHeight: 17, fontWeight: '700', color: palette.muted },
   tabTextActive: { color: palette.white },
+  termHint: { fontSize: 12, lineHeight: 18, color: palette.muted, fontWeight: '600' },
   supportBlock: { gap: 8, paddingTop: 4 },
   sectionLabel: { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: palette.muted, fontWeight: '700' },
   cardTitle: { fontSize: 18, lineHeight: 24, color: palette.ink, fontWeight: '700' },
