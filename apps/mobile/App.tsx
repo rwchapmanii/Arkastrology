@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { BrandMark } from './src/components/BrandMark';
 import { PrimaryButton, SurfaceCard } from './src/components/common';
 import { palette } from './src/constants/theme';
@@ -364,6 +364,15 @@ export default function App() {
       <StatusBar barStyle="dark-content" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={[styles.hero, screenMode === 'auth' && styles.heroAuth]}>
+          {screenMode !== 'auth' ? (
+            <View style={styles.heroTopRow}>
+              <View />
+              <Pressable style={({ pressed }) => [styles.heroAction, pressed && styles.heroActionPressed]} onPress={() => void handleSignOut()}>
+                <Feather name="log-out" size={14} color={palette.ink} />
+                <Text style={styles.heroActionText}>{authState.mode === 'authenticated' ? 'Logout' : 'Exit'}</Text>
+              </Pressable>
+            </View>
+          ) : null}
           <BrandMark size={64} />
           <Text style={[styles.eyebrow, screenMode === 'auth' && styles.heroAuthText]}>The Ark</Text>
           <Text style={[styles.title, screenMode === 'auth' && styles.heroAuthText]}>Enter the chamber.</Text>
@@ -410,6 +419,36 @@ const styles = StyleSheet.create({
     paddingVertical: 30,
     gap: 10,
     overflow: 'hidden',
+  },
+  heroTopRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  heroAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.background,
+    alignSelf: 'flex-end',
+  },
+  heroActionPressed: {
+    opacity: 0.82,
+  },
+  heroActionText: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: palette.ink,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   heroAuth: {
     alignItems: 'center',
