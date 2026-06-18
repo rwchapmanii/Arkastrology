@@ -226,6 +226,7 @@ export function ReadingScreen({
   loading,
   apiBaseUrl,
   sessionToken,
+  onAskThreadUpdated,
   onEditOnboarding,
   onRefresh,
   onOpenDetail,
@@ -236,6 +237,7 @@ export function ReadingScreen({
   loading: boolean;
   apiBaseUrl: string;
   sessionToken?: string;
+  onAskThreadUpdated?: () => void;
   onEditOnboarding: () => void;
   onRefresh: () => void;
   onOpenDetail: (block: InterpretationBlock) => void;
@@ -292,6 +294,13 @@ export function ReadingScreen({
     setChatError(null);
     setChatLoading(false);
   }, [result.reading.headline, result.chart_type]);
+
+  useEffect(() => {
+    if (activeTab !== 'ask' || !chatMessages.length) return;
+    const latest = chatMessages[chatMessages.length - 1];
+    if (latest.role !== 'assistant') return;
+    onAskThreadUpdated?.();
+  }, [activeTab, chatMessages, onAskThreadUpdated]);
 
   async function handleAskQuestion(questionOverride?: string) {
     const question = (questionOverride ?? chatDraft).trim();

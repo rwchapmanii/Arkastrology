@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { BrandMark } from './src/components/BrandMark';
@@ -18,6 +18,7 @@ import { TechnicalChartScreen } from './src/screens/TechnicalChartScreen';
 import { InterpretationBlock, ScreenMode } from './src/types/app';
 
 export default function App() {
+  const scrollRef = useRef<ScrollView | null>(null);
   const {
     authState,
     authReady,
@@ -326,6 +327,11 @@ export default function App() {
           loading={workspace.loading}
           apiBaseUrl={workspace.draft.apiBaseUrl}
           sessionToken={authState.mode === 'authenticated' ? authState.token : undefined}
+          onAskThreadUpdated={() => {
+            requestAnimationFrame(() => {
+              scrollRef.current?.scrollToEnd({ animated: true });
+            });
+          }}
           onEditOnboarding={() => setScreenMode('onboarding')}
           onRefresh={() => void handleGenerateReading()}
           onOpenDetail={(block) => {
@@ -373,7 +379,7 @@ export default function App() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.hero, screenMode === 'auth' && styles.heroAuth]}>
           {screenMode !== 'auth' ? (
             <View style={styles.heroTopRow}>
