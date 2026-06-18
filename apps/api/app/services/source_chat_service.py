@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 from dataclasses import dataclass
@@ -39,6 +40,7 @@ ALIASES = {
     "sectlight": "sect light",
 }
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
+LOGGER = logging.getLogger("the_ark.source_chat")
 
 
 @dataclass(frozen=True)
@@ -449,6 +451,7 @@ def _extract_output_text(payload: dict[str, Any]) -> str:
 def _reasoned_answer(question: str, history: list[dict[str, str]], reading_chunks: list[CorpusChunk], doc_chunks: list[CorpusChunk]) -> str:
     api_key = _openai_api_key()
     if not api_key:
+        LOGGER.info("Grounded chat using deterministic fallback because OPENAI_API_KEY is not configured.")
         return _fallback_answer(question, reading_chunks, doc_chunks)
 
     system_prompt = (
@@ -495,17 +498,28 @@ def _reasoned_answer(question: str, history: list[dict[str, str]], reading_chunk
     )
 
     try:
+        LOGGER.info(
+            "Grounded chat attempting model synthesis. model=%s reasoning_effort=%s reading_chunks=%s doc_chunks=%s",
+            _openai_model(),
+            _openai_reasoning_effort(),
+            len(reading_chunks),
+            len(doc_chunks),
+        )
         with urllib_request.urlopen(request, timeout=_openai_timeout_seconds()) as response:
             response_payload = json.loads(response.read().decode("utf-8"))
     except urllib_error.HTTPError as exc:
         error_body = exc.read().decode("utf-8", errors="ignore")
+        LOGGER.warning("Grounded chat model request failed with HTTP %s: %s", exc.code, error_body[:500])
         raise RuntimeError(f"Grounded chat model request failed ({exc.code}): {error_body[:240]}") from exc
     except urllib_error.URLError as exc:
+        LOGGER.warning("Grounded chat model request failed with URL error: %s", exc.reason)
         raise RuntimeError(f"Grounded chat model request failed: {exc.reason}") from exc
 
     answer = _extract_output_text(response_payload)
     if not answer:
+        LOGGER.warning("Grounded chat model returned no answer text.")
         raise RuntimeError("Grounded chat model returned no answer text.")
+    LOGGER.info("Grounded chat model synthesis succeeded.")
     return _normalize_answer_text(answer)
 
 
@@ -528,6 +542,13 @@ class SourceChatService:
             "This answer is grounded in the current reading plus the traditional source documents loaded into The Ark.",
             "Optional symbolic or psychological overlays are not treated as the default source layer unless they are explicitly present in the reading context.",
         ]
+        LOGGER.info(
+            "Grounded chat received question. history_turns=%s reading_matches=%s doc_matches=%s question=%r",
+            len(history_payload),
+            len(top_reading),
+            len(top_docs),
+            question[:200],
+        )
 
         try:
             answer = _reasoned_answer(question, history_payload, top_reading, top_docs)
@@ -537,6 +558,7 @@ class SourceChatService:
             answer = _compose_answer(question, top_reading, top_docs)
             notes.append(str(exc))
             notes.append("The system fell back to deterministic grounded synthesis for this answer.")
+            LOGGER.warning("Grounded chat fell back to deterministic synthesis: %s", exc)
 
         sources = _dedupe_sources([*top_reading, *top_docs])
         if not top_docs:

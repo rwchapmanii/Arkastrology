@@ -246,7 +246,7 @@ export function ReadingScreen({
   const [chatDraft, setChatDraft] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
-  const [chatMessages, setChatMessages] = useState<Array<GroundedChatTurn & { sources?: GroundedChatSource[] }>>([]);
+  const [chatMessages, setChatMessages] = useState<Array<GroundedChatTurn & { sources?: GroundedChatSource[]; notes?: string[] }>>([]);
   const blocks = useMemo(() => dedupeBlocks(result.interpretation_blocks), [result.interpretation_blocks]);
   const annualBlock = blockByType(blocks, 'annual_profection');
   const yearMapBlock = blockByType(blocks, 'year_map');
@@ -311,6 +311,7 @@ export function ReadingScreen({
           role: 'assistant',
           content: response.answer,
           sources: response.sources,
+          notes: response.grounding_notes,
         },
       ]);
     } catch (error) {
@@ -562,6 +563,13 @@ export function ReadingScreen({
                         ))}
                       </View>
                     ) : null}
+                    {message.notes?.length ? (
+                      <View style={styles.chatNotes}>
+                        {message.notes.map((note) => (
+                          <Text key={note} style={styles.chatNote}>• {note}</Text>
+                        ))}
+                      </View>
+                    ) : null}
                   </View>
                 ))}
               </View>
@@ -650,6 +658,8 @@ const styles = StyleSheet.create({
   sourceTitle: { fontSize: 13, lineHeight: 18, color: palette.ink, fontWeight: '700' },
   sourceMeta: { fontSize: 11, lineHeight: 16, color: palette.muted, textTransform: 'capitalize' },
   sourceExcerpt: { fontSize: 12, lineHeight: 18, color: palette.muted },
+  chatNotes: { gap: 4, paddingTop: 4 },
+  chatNote: { fontSize: 11, lineHeight: 17, color: palette.muted },
   chatInput: {
     minHeight: 120,
     borderWidth: 1,
