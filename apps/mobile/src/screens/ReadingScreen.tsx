@@ -284,8 +284,23 @@ export function ReadingScreen({
     </View>
   );
 
+  const chartMapCard = (
+    <SurfaceCard title="Visual chart map" subtitle="The outer ring shows the natal chart. The inner ring shows the timing or live overlay. The center lines show major aspects.">
+      <Text style={styles.chartHelper}>Use the chart to orient yourself first, then move through the reading in order.</Text>
+      <ChartWheel
+        title={result.chart_type === 'synastry' ? 'Relationship chart map' : 'Birth chart map'}
+        primaryChart={result.chart_type === 'synastry' ? result.technical_summary?.primary_chart_data : result.technical_summary?.chart_data}
+        secondaryChart={result.chart_type === 'synastry' ? result.technical_summary?.secondary_chart_data : result.technical_summary?.transit_chart_data}
+        compact
+      />
+      <SecondaryButton label="Open full chart details" onPress={onOpenTechnical} icon={<MaterialCommunityIcons name="chart-bubble" size={17} color={palette.ink} />} />
+    </SurfaceCard>
+  );
+
   return (
     <>
+      {activeTab === 'reading' ? chartMapCard : null}
+
       <View style={styles.tabWrap}>
         <Pressable style={[styles.tabPill, activeTab === 'reading' && styles.tabPillActive]} onPress={() => setActiveTab('reading')}>
           <Text style={[styles.tabText, activeTab === 'reading' && styles.tabTextActive]}>Reading</Text>
@@ -297,16 +312,6 @@ export function ReadingScreen({
 
       {activeTab === 'reading' ? (
         <>
-          <SurfaceCard title="Visual chart map" subtitle="The outer ring shows the natal chart. The inner ring shows the timing or live overlay. The center lines show major aspects.">
-            <Text style={styles.chartHelper}>Use the chart to orient yourself first, then move through the reading in order.</Text>
-            <ChartWheel
-              title={result.chart_type === 'synastry' ? 'Relationship chart map' : 'Birth chart map'}
-              primaryChart={result.chart_type === 'synastry' ? result.technical_summary?.primary_chart_data : result.technical_summary?.chart_data}
-              secondaryChart={result.chart_type === 'synastry' ? result.technical_summary?.secondary_chart_data : result.technical_summary?.transit_chart_data}
-              compact
-            />
-            <SecondaryButton label="Open full chart details" onPress={onOpenTechnical} icon={<MaterialCommunityIcons name="chart-bubble" size={17} color={palette.ink} />} />
-          </SurfaceCard>
 
           <Text style={styles.termHint}>Tap underlined terms for quick definitions.</Text>
 
