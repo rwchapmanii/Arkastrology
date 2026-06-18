@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable, Optional
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 
 from app.models.chat import GroundedChatRequest, GroundedChatResponse, GroundedChatSource
+from app.services.env_service import load_local_env
+
+load_local_env()
 
 BASE_DIR = Path(__file__).resolve().parents[4]
 DOCS_DIR = BASE_DIR / "docs"
@@ -32,6 +38,7 @@ ALIASES = {
     "year-lord": "lord of the year",
     "sectlight": "sect light",
 }
+OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 
 
 @dataclass(frozen=True)
@@ -53,6 +60,13 @@ def _clean_text(text: str) -> str:
     return text
 
 
+def _normalize_answer_text(text: str) -> str:
+    text = text.replace("\r", "")
+    paragraphs = [re.sub(r"[ \t]+", " ", part).strip() for part in text.split("\n")]
+    paragraphs = [part for part in paragraphs if part]
+    return "\n\n".join(paragraphs).strip()
+
+
 def _sentence_limit(text: str, max_sentences: int = 2, max_chars: int = 420) -> str:
     cleaned = _clean_text(text)
     if not cleaned:
@@ -64,6 +78,28 @@ def _sentence_limit(text: str, max_sentences: int = 2, max_chars: int = 420) -> 
     if len(joined) <= max_chars:
         return joined
     return joined[: max_chars - 1].rstrip() + "…"
+
+
+def _openai_api_key() -> str:
+    return (os.getenv("OPENAI_API_KEY") or "").strip()
+
+
+def _openai_model() -> str:
+    return (os.getenv("OPENAI_CHAT_MODEL") or "gpt-5-mini").strip()
+
+
+def _openai_reasoning_effort() -> str:
+    value = (os.getenv("OPENAI_REASONING_EFFORT") or "high").strip().lower()
+    return value if value in {"low", "medium", "high"} else "high"
+
+
+def _openai_timeout_seconds() -> int:
+    raw = (os.getenv("OPENAI_TIMEOUT_SECONDS") or "45").strip()
+    try:
+        value = int(raw)
+    except ValueError:
+        return 45
+    return max(10, min(value, 120))
 
 
 def _normalize_token(token: str) -> str:
@@ -268,6 +304,34 @@ def _build_reading_chunks(reading_payload: Optional[dict[str, Any]]) -> list[Cor
     return chunks
 
 
+def _format_history_for_model(history: list[dict[str, str]]) -> str:
+    if not history:
+        return "No prior conversation turns."
+    lines: list[str] = []
+    for turn in history[-6:]:
+        role = str(turn.get("role") or "user").capitalize()
+        content = _clean_text(str(turn.get("content") or ""))
+        if content:
+            lines.append(f"{role}: {content}")
+    return "\n".join(lines) if lines else "No prior conversation turns."
+
+
+def _format_chunks_for_model(chunks: list[CorpusChunk]) -> str:
+    if not chunks:
+        return "None."
+    formatted: list[str] = []
+    for index, chunk in enumerate(chunks, start=1):
+        source_bits = [chunk.source_type]
+        if chunk.source_layer:
+            source_bits.append(chunk.source_layer)
+        if chunk.source_ref:
+            source_bits.append(chunk.source_ref)
+        formatted.append(
+            f"[{index}] {chunk.title} ({' | '.join(source_bits)})\n{_sentence_limit(chunk.text, max_sentences=4, max_chars=900)}"
+        )
+    return "\n\n".join(formatted)
+
+
 def _score_chunk(question_tokens: set[str], question_text: str, chunk: CorpusChunk) -> float:
     search_text = chunk.search_text.lower()
     chunk_tokens = set(_tokenize(search_text))
@@ -328,7 +392,7 @@ def _dedupe_sources(chunks: list[CorpusChunk], limit: int = 4) -> list[GroundedC
     return sources
 
 
-def _compose_answer(question: str, reading_chunks: list[CorpusChunk], doc_chunks: list[CorpusChunk]) -> str:
+def _fallback_answer(question: str, reading_chunks: list[CorpusChunk], doc_chunks: list[CorpusChunk]) -> str:
     paragraphs: list[str] = []
 
     if reading_chunks:
@@ -357,6 +421,98 @@ def _compose_answer(question: str, reading_chunks: list[CorpusChunk], doc_chunks
     return "\n\n".join(paragraphs)
 
 
+def _extract_output_text(payload: dict[str, Any]) -> str:
+    direct = payload.get("output_text")
+    if isinstance(direct, str) and direct.strip():
+        return direct.strip()
+
+    output = payload.get("output")
+    if isinstance(output, list):
+        text_parts: list[str] = []
+        for item in output:
+            if not isinstance(item, dict):
+                continue
+            content = item.get("content")
+            if not isinstance(content, list):
+                continue
+            for part in content:
+                if not isinstance(part, dict):
+                    continue
+                text_value = part.get("text")
+                if isinstance(text_value, str) and text_value.strip():
+                    text_parts.append(text_value.strip())
+        if text_parts:
+            return "\n\n".join(text_parts).strip()
+    return ""
+
+
+def _reasoned_answer(question: str, history: list[dict[str, str]], reading_chunks: list[CorpusChunk], doc_chunks: list[CorpusChunk]) -> str:
+    api_key = _openai_api_key()
+    if not api_key:
+        return _fallback_answer(question, reading_chunks, doc_chunks)
+
+    system_prompt = (
+        "You are The Ark, an articulate traditional astrologer. "
+        "Answer the user's specific question directly and naturally, not like a template or database dump. "
+        "Ground your answer in the provided source material and reading context. "
+        "Use high-level reasoning to synthesize the answer, but do not invent facts beyond the supplied context. "
+        "Prefer traditional astrology framing over modern psychological drift unless the provided context explicitly requires a modern overlay. "
+        "Do not repeat the whole reading. Answer only what helps with the question. "
+        "If the evidence is mixed, say so plainly. If the context is insufficient, say what is missing."
+    )
+
+    user_prompt = (
+        f"User question:\n{question}\n\n"
+        f"Recent conversation turns:\n{_format_history_for_model(history)}\n\n"
+        f"Current reading context:\n{_format_chunks_for_model(reading_chunks[:5])}\n\n"
+        f"Traditional source documents and ontology:\n{_format_chunks_for_model(doc_chunks[:6])}\n\n"
+        "Write a concise but articulate answer in plain prose, as a serious astrologer would."
+    )
+
+    payload = {
+        "model": _openai_model(),
+        "reasoning": {"effort": _openai_reasoning_effort()},
+        "input": [
+            {
+                "role": "system",
+                "content": [{"type": "input_text", "text": system_prompt}],
+            },
+            {
+                "role": "user",
+                "content": [{"type": "input_text", "text": user_prompt}],
+            },
+        ],
+    }
+
+    request = urllib_request.Request(
+        OPENAI_RESPONSES_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib_request.urlopen(request, timeout=_openai_timeout_seconds()) as response:
+            response_payload = json.loads(response.read().decode("utf-8"))
+    except urllib_error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="ignore")
+        raise RuntimeError(f"Grounded chat model request failed ({exc.code}): {error_body[:240]}") from exc
+    except urllib_error.URLError as exc:
+        raise RuntimeError(f"Grounded chat model request failed: {exc.reason}") from exc
+
+    answer = _extract_output_text(response_payload)
+    if not answer:
+        raise RuntimeError("Grounded chat model returned no answer text.")
+    return _normalize_answer_text(answer)
+
+
+def _compose_answer(question: str, reading_chunks: list[CorpusChunk], doc_chunks: list[CorpusChunk]) -> str:
+    return _fallback_answer(question, reading_chunks, doc_chunks)
+
+
 class SourceChatService:
     @classmethod
     def answer_question(cls, request: GroundedChatRequest) -> GroundedChatResponse:
@@ -368,13 +524,21 @@ class SourceChatService:
 
         top_reading = ranked_reading[:2]
         top_docs = ranked_docs[:3]
-        answer = _compose_answer(question, top_reading, top_docs)
-        sources = _dedupe_sources([*top_reading, *top_docs])
-
         notes = [
             "This answer is grounded in the current reading plus the traditional source documents loaded into The Ark.",
             "Optional symbolic or psychological overlays are not treated as the default source layer unless they are explicitly present in the reading context.",
         ]
+
+        try:
+            answer = _reasoned_answer(question, history_payload, top_reading, top_docs)
+            if _openai_api_key():
+                notes.append(f"Reasoning model used: {_openai_model()}.")
+        except RuntimeError as exc:
+            answer = _compose_answer(question, top_reading, top_docs)
+            notes.append(str(exc))
+            notes.append("The system fell back to deterministic grounded synthesis for this answer.")
+
+        sources = _dedupe_sources([*top_reading, *top_docs])
         if not top_docs:
             notes.append("The source-document match was weak, so the answer leaned more heavily on the current reading context.")
 

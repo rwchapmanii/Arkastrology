@@ -42,3 +42,22 @@ The local example config is prefilled for Google Workspace / Gmail SMTP:
 - `smtp`: send through SMTP, falling back to debug outbox if delivery fails
 - `auto`: prefer API delivery when `EMAIL_PROVIDER` is configured, otherwise use SMTP when configured, otherwise use debug outbox
 - `disabled`: suppress delivery entirely
+
+## Grounded chat configuration
+
+The Ask feature can now answer from the current reading plus the traditional source documents loaded into the repo.
+
+### Deterministic fallback
+
+If no OpenAI key is configured, grounded chat still works, but it uses a local deterministic synthesis path. That keeps answers source-bound, but they will sound flatter and more repetitive.
+
+### Turn on higher-reasoning grounded chat
+
+1. Open `apps/api/.env`
+2. Set:
+   - `OPENAI_API_KEY=<your api key>`
+   - `OPENAI_CHAT_MODEL=<reasoning-capable model>`
+   - optional: `OPENAI_REASONING_EFFORT=high`
+3. Restart or redeploy the API
+
+With those env vars present, The Ark will retrieve grounded source passages locally and then ask the model to synthesize a more articulate astrologer-style answer from that context.
