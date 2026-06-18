@@ -20,6 +20,7 @@ from app.models.auth import (
     TokenDeliveryResponse,
     VerificationConfirmResponse,
 )
+from app.models.chat import GroundedChatRequest, GroundedChatResponse
 from app.models.chart import (
     NatalReadingRequest,
     NatalReadingResponse,
@@ -36,6 +37,7 @@ from app.services.natal_service import NatalReadingService
 from app.services.place_service import PlaceResolutionService
 from app.services.rate_limit_service import RateLimitService
 from app.services.reading_history_service import ReadingHistoryService
+from app.services.source_chat_service import SourceChatService
 from app.services.synastry_service import SynastryReadingService
 
 router = APIRouter()
@@ -251,6 +253,16 @@ def create_synastry_reading(
     if user_id:
         ReadingHistoryService.record_reading(user_id, response.model_dump())
     return response
+
+
+@router.post("/v1/chat/grounded", response_model=GroundedChatResponse)
+def grounded_chat(
+    request: GroundedChatRequest,
+    authorization: Annotated[Optional[str], Header()] = None,
+) -> GroundedChatResponse:
+    if authorization:
+        AuthService.get_optional_user_id_for_session(authorization)
+    return SourceChatService.answer_question(request)
 
 
 @router.get("/v1/citations")

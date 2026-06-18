@@ -1,6 +1,6 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { GlossaryText } from '../components/GlossaryText';
 import { ChartWheel } from '../components/ChartWheel';
 import { InterpretationCard } from '../components/InterpretationCard';
@@ -8,7 +8,8 @@ import { PrimaryButton, SecondaryButton, SurfaceCard } from '../components/commo
 import { palette } from '../constants/theme';
 import { astrologyGuideSections } from '../content/astrologyGuide';
 import { GLOSSARY_ENTRIES } from '../content/glossary';
-import { AnyReadingResponse, InterpretationBlock, TopicJudgmentRecord, TransitAspectRecord } from '../types/app';
+import { askGroundedQuestion } from '../services/api';
+import { AnyReadingResponse, GroundedChatSource, GroundedChatTurn, InterpretationBlock, TopicJudgmentRecord, TransitAspectRecord } from '../types/app';
 
 function formatHouseRef(house?: string | null) {
   if (!house) return 'an unknown house';
@@ -223,6 +224,8 @@ function CollapsibleCard({
 export function ReadingScreen({
   result,
   loading,
+  apiBaseUrl,
+  sessionToken,
   onEditOnboarding,
   onRefresh,
   onOpenDetail,
@@ -231,13 +234,19 @@ export function ReadingScreen({
 }: {
   result: AnyReadingResponse;
   loading: boolean;
+  apiBaseUrl: string;
+  sessionToken?: string;
   onEditOnboarding: () => void;
   onRefresh: () => void;
   onOpenDetail: (block: InterpretationBlock) => void;
   onOpenAccount: () => void;
   onOpenTechnical: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<'reading' | 'guide'>('reading');
+  const [activeTab, setActiveTab] = useState<'reading' | 'guide' | 'ask'>('reading');
+  const [chatDraft, setChatDraft] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<Array<GroundedChatTurn & { sources?: GroundedChatSource[] }>>([]);
   const blocks = useMemo(() => dedupeBlocks(result.interpretation_blocks), [result.interpretation_blocks]);
   const annualBlock = blockByType(blocks, 'annual_profection');
   const yearMapBlock = blockByType(blocks, 'year_map');
@@ -260,6 +269,12 @@ export function ReadingScreen({
     : null;
   const readingFlow = buildReadingFlow(result);
   const guideCards = learnCardsForGuide(blocks);
+  const suggestedQuestions = [
+    'Why is this the main theme of my year?',
+    'What does Fortune and Spirit mean in this reading?',
+    'Why is this area supported or strained?',
+    'Which source documents support this answer?',
+  ];
   const technicalLines = [
     result.technical_summary?.house_system ? `House system: ${result.technical_summary.house_system}` : null,
     result.technical_summary?.chart_data?.traditional_context?.sect ? `Sect: ${result.technical_summary.chart_data.traditional_context.sect}` : null,
@@ -270,6 +285,42 @@ export function ReadingScreen({
     result.technical_summary?.chart_data?.traditional_context?.fortune ? `Fortune: ${result.technical_summary.chart_data.traditional_context.fortune.sign} ${formatHouseRef(result.technical_summary.chart_data.traditional_context.fortune.house)}` : null,
     result.technical_summary?.chart_data?.traditional_context?.spirit ? `Spirit: ${result.technical_summary.chart_data.traditional_context.spirit.sign} ${formatHouseRef(result.technical_summary.chart_data.traditional_context.spirit.house)}` : null,
   ].filter((value): value is string => Boolean(value));
+
+  useEffect(() => {
+    setChatMessages([]);
+    setChatDraft('');
+    setChatError(null);
+    setChatLoading(false);
+  }, [result.reading.headline, result.chart_type]);
+
+  async function handleAskQuestion(questionOverride?: string) {
+    const question = (questionOverride ?? chatDraft).trim();
+    if (!question || chatLoading) return;
+
+    const priorTurns: GroundedChatTurn[] = chatMessages.map(({ role, content }) => ({ role, content }));
+    setChatLoading(true);
+    setChatError(null);
+    setChatMessages((current) => [...current, { role: 'user', content: question }]);
+    if (!questionOverride) setChatDraft('');
+
+    try {
+      const response = await askGroundedQuestion(apiBaseUrl, question, result, priorTurns, sessionToken);
+      setChatMessages((current) => [
+        ...current,
+        {
+          role: 'assistant',
+          content: response.answer,
+          sources: response.sources,
+        },
+      ]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not answer that question right now.';
+      setChatError(message);
+      setChatMessages((current) => current.slice(0, -1));
+    } finally {
+      setChatLoading(false);
+    }
+  }
 
   const summaryHero = (
     <View style={styles.heroCard}>
@@ -307,6 +358,9 @@ export function ReadingScreen({
         </Pressable>
         <Pressable style={[styles.tabPill, activeTab === 'guide' && styles.tabPillActive]} onPress={() => setActiveTab('guide')}>
           <Text style={[styles.tabText, activeTab === 'guide' && styles.tabTextActive]}>Guide</Text>
+        </Pressable>
+        <Pressable style={[styles.tabPill, activeTab === 'ask' && styles.tabPillActive]} onPress={() => setActiveTab('ask')}>
+          <Text style={[styles.tabText, activeTab === 'ask' && styles.tabTextActive]}>Ask</Text>
         </Pressable>
       </View>
 
@@ -422,7 +476,7 @@ export function ReadingScreen({
           </View>
           <SecondaryButton label="Account and settings" onPress={onOpenAccount} icon={<Ionicons name="person-circle-outline" size={17} color={palette.ink} />} />
         </>
-      ) : (
+      ) : activeTab === 'guide' ? (
         <>
           {summaryHero}
 
@@ -473,6 +527,66 @@ export function ReadingScreen({
             </View>
           </SurfaceCard>
         </>
+      ) : (
+        <>
+          <SurfaceCard title="Ask about this reading" subtitle="This chat answers from the current reading plus the source-of-truth documents used by The Ark.">
+            <Text style={styles.chatIntro}>
+              Ask about a sentence in your reading, a planet, a house, Fortune and Spirit, annual profection, or what source material supports an interpretation.
+            </Text>
+            <View style={styles.suggestionWrap}>
+              {suggestedQuestions.map((question) => (
+                <Pressable key={question} style={styles.suggestionChip} onPress={() => void handleAskQuestion(question)}>
+                  <Text style={styles.suggestionText}>{question}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </SurfaceCard>
+
+          <SurfaceCard title="Conversation" subtitle="Grounded answers stay tied to source documents rather than free-floating chat.">
+            {chatMessages.length ? (
+              <View style={styles.chatThread}>
+                {chatMessages.map((message, index) => (
+                  <View key={`${message.role}-${index}-${message.content.slice(0, 24)}`} style={[styles.chatBubble, message.role === 'user' ? styles.userBubble : styles.assistantBubble]}>
+                    <Text style={styles.chatRole}>{message.role === 'user' ? 'You' : 'The Ark'}</Text>
+                    <GlossaryText text={message.content} textStyle={styles.chatText} />
+                    {message.sources?.length ? (
+                      <View style={styles.chatSources}>
+                        {message.sources.map((source) => (
+                          <View key={`${source.title}-${source.source_ref || source.excerpt}`} style={styles.sourceCard}>
+                            <Text style={styles.sourceTitle}>{source.title}</Text>
+                            <Text style={styles.sourceMeta}>
+                              {source.source_type.replace('_', ' ')}{source.source_layer ? ` • ${source.source_layer.replace('_', ' ')}` : ''}
+                            </Text>
+                            <Text style={styles.sourceExcerpt}>{source.excerpt}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.supporting}>No questions yet. Start with one of the suggested prompts or ask your own.</Text>
+            )}
+            {chatError ? <Text style={styles.chatError}>{chatError}</Text> : null}
+            <TextInput
+              value={chatDraft}
+              onChangeText={setChatDraft}
+              placeholder="Ask a question about this reading or the traditional source documents…"
+              placeholderTextColor={palette.muted}
+              multiline
+              style={styles.chatInput}
+              textAlignVertical="top"
+            />
+            <PrimaryButton
+              label="Ask The Ark"
+              onPress={() => void handleAskQuestion()}
+              loading={chatLoading}
+              disabled={!chatDraft.trim()}
+              icon={<Ionicons name="chatbubble-ellipses-outline" size={16} color={palette.white} />}
+            />
+          </SurfaceCard>
+        </>
       )}
     </>
   );
@@ -514,6 +628,41 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 13, lineHeight: 17, fontWeight: '700', color: palette.muted },
   tabTextActive: { color: palette.white },
   termHint: { fontSize: 12, lineHeight: 18, color: palette.muted, fontWeight: '600' },
+  chatIntro: { fontSize: 14, lineHeight: 22, color: palette.ink },
+  suggestionWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  suggestionChip: {
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surfaceStrong,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  suggestionText: { fontSize: 12, lineHeight: 16, color: palette.ink, fontWeight: '600' },
+  chatThread: { gap: 12 },
+  chatBubble: { borderRadius: 18, padding: 14, gap: 8, borderWidth: 1 },
+  userBubble: { backgroundColor: palette.surfaceStrong, borderColor: palette.borderStrong },
+  assistantBubble: { backgroundColor: palette.surface, borderColor: palette.border },
+  chatRole: { fontSize: 11, lineHeight: 16, letterSpacing: 1.1, textTransform: 'uppercase', color: palette.muted, fontWeight: '700' },
+  chatText: { fontSize: 14, lineHeight: 22, color: palette.ink },
+  chatSources: { gap: 8, paddingTop: 4 },
+  sourceCard: { borderRadius: 12, borderWidth: 1, borderColor: palette.border, backgroundColor: palette.input, padding: 10, gap: 4 },
+  sourceTitle: { fontSize: 13, lineHeight: 18, color: palette.ink, fontWeight: '700' },
+  sourceMeta: { fontSize: 11, lineHeight: 16, color: palette.muted, textTransform: 'capitalize' },
+  sourceExcerpt: { fontSize: 12, lineHeight: 18, color: palette.muted },
+  chatInput: {
+    minHeight: 120,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.input,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontSize: 15,
+    lineHeight: 22,
+    color: palette.ink,
+  },
+  chatError: { fontSize: 13, lineHeight: 19, color: '#a33a2b', fontWeight: '600' },
   supportBlock: { gap: 8, paddingTop: 4 },
   sectionLabel: { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: palette.muted, fontWeight: '700' },
   cardTitle: { fontSize: 18, lineHeight: 24, color: palette.ink, fontWeight: '700' },

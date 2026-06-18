@@ -3,6 +3,8 @@ import {
   AnyReadingResponse,
   AuthSessionResponse,
   AuthState,
+  GroundedChatResponse,
+  GroundedChatTurn,
   PasswordResetConfirmResponse,
   PlaceResolveResponse,
   ReadingHistoryDetailResponse,
@@ -263,4 +265,22 @@ export async function requestReading(baseUrl: string, draft: AppDraft, sessionTo
     body: JSON.stringify(body),
   });
   return sanitizeReadingResponse(response);
+}
+
+export async function askGroundedQuestion(
+  baseUrl: string,
+  question: string,
+  readingPayload: AnyReadingResponse,
+  history: GroundedChatTurn[] = [],
+  sessionToken?: string,
+) {
+  return requestJson<GroundedChatResponse>(baseUrl, '/v1/chat/grounded', {
+    method: 'POST',
+    headers: buildHeaders(sessionToken),
+    body: JSON.stringify({
+      question,
+      reading_payload: readingPayload,
+      history,
+    }),
+  });
 }

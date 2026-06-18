@@ -324,6 +324,8 @@ export default function App() {
         <ReadingScreen
           result={workspace.result}
           loading={workspace.loading}
+          apiBaseUrl={workspace.draft.apiBaseUrl}
+          sessionToken={authState.mode === 'authenticated' ? authState.token : undefined}
           onEditOnboarding={() => setScreenMode('onboarding')}
           onRefresh={() => void handleGenerateReading()}
           onOpenDetail={(block) => {

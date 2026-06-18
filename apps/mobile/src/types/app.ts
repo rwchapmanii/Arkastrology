@@ -1,6 +1,7 @@
 export type ReadingMode = 'natal' | 'synastry';
 export type ScreenMode = 'auth' | 'onboarding' | 'reading' | 'detail' | 'account' | 'technical' | 'history';
 export type PersonSlot = 'primary' | 'secondary';
+export type ChatRole = 'user' | 'assistant';
 
 export type ReadingSection = {
   headline: string;
@@ -404,6 +405,26 @@ export type SessionStatusResponse = {
     timezone_name?: string | null;
     bio?: string | null;
   };
+};
+
+export type GroundedChatSource = {
+  title: string;
+  excerpt: string;
+  source_type: string;
+  source_layer?: string | null;
+  source_ref?: string | null;
+};
+
+export type GroundedChatTurn = {
+  role: ChatRole;
+  content: string;
+};
+
+export type GroundedChatResponse = {
+  status: string;
+  answer: string;
+  sources: GroundedChatSource[];
+  grounding_notes: string[];
 };
 
 export type TokenDeliveryResponse = {
