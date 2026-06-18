@@ -114,7 +114,6 @@ export function OnboardingScreen({
   stepLabels,
   savedPeople,
   onSetReadingMode,
-  onApiBaseUrlChange,
   placeCandidates,
   onPersonChange,
   onResolveBirthplace,
@@ -139,7 +138,6 @@ export function OnboardingScreen({
   stepLabels: string[];
   savedPeople: SavedPerson[];
   onSetReadingMode: (value: ReadingMode) => void;
-  onApiBaseUrlChange: (value: string) => void;
   placeCandidates: Record<PersonSlot, PlaceCandidate[]>;
   onPersonChange: (slot: PersonSlot, key: keyof PersonDraft, value: string) => void;
   onResolveBirthplace: (slot: PersonSlot) => void;
@@ -179,11 +177,6 @@ export function OnboardingScreen({
           <Text style={styles.mutedText}>Enter the chart details directly on this screen, then move to review when you are ready.</Text>
         </SurfaceCard>
 
-        <SurfaceCard title="Connection" subtitle="This is the API endpoint the app will use for readings, accounts, and chart calculations.">
-          <Field label="API base URL" value={draft.apiBaseUrl} onChangeText={onApiBaseUrlChange} placeholder="https://api.theark.app" autoCapitalize="none" />
-          <Text style={styles.mutedText}>For local web development this is usually <Text style={styles.emphasis}>http://127.0.0.1:8000</Text>. For a deployed web app, point this at the live Ark API or same-origin backend.</Text>
-        </SurfaceCard>
-
         <SurfaceCard title="Saved people" subtitle="Reuse saved birth profiles instead of retyping the same information.">
           {savedPeople.length === 0 ? (
             <Text style={styles.mutedText}>No saved people yet. Save one from Person A or Person B after entering the birth details.</Text>
@@ -221,7 +214,6 @@ export function OnboardingScreen({
       <>
         <SurfaceCard title="Review" subtitle="Check the reading type, selected people, and explanation settings before you generate the reading.">
           <View style={styles.metricGrid}>
-            <MetricChip label="API" value={draft.apiBaseUrl.replace(/^https?:\/\//, '')} icon={<Feather name="link" size={14} color={palette.muted} />} />
             <MetricChip label="Mode" value={draft.readingMode === 'natal' ? 'Natal' : 'Synastry'} icon={<MaterialCommunityIcons name="orbit" size={14} color={palette.muted} />} />
             <MetricChip label="Person A" value={draft.primary.name || 'Unnamed'} icon={<Ionicons name="person-outline" size={14} color={palette.muted} />} />
             {draft.readingMode === 'synastry' ? <MetricChip label="Person B" value={draft.secondary.name || 'Unnamed'} icon={<Ionicons name="people-outline" size={14} color={palette.muted} />} /> : null}

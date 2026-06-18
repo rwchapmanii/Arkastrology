@@ -6,22 +6,18 @@ import { palette } from '../constants/theme';
 import { Field, PrimaryButton, SurfaceCard } from '../components/common';
 
 export function AuthScreen({
-  apiBaseUrl,
   email,
   password,
   authMode,
-  onApiBaseUrlChange,
   onEmailChange,
   onPasswordChange,
   onAuthModeChange,
   onSignIn,
   onRegister,
 }: {
-  apiBaseUrl: string;
   email: string;
   password: string;
   authMode: 'sign in' | 'register';
-  onApiBaseUrlChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onAuthModeChange: (value: 'sign in' | 'register') => void;
@@ -48,7 +44,6 @@ export function AuthScreen({
 
         <Field label="Email" value={email} onChangeText={onEmailChange} placeholder="ron@example.com" keyboardType="email-address" autoCapitalize="none" />
         <Field label="Password" value={password} onChangeText={onPasswordChange} placeholder="At least 8 characters" secureTextEntry autoCapitalize="none" />
-        <Field label="API base URL" value={apiBaseUrl} onChangeText={onApiBaseUrlChange} placeholder="https://api.theark.app" autoCapitalize="none" />
 
         <PrimaryButton
           label={isRegister ? 'Create account' : 'Sign in'}
@@ -58,8 +53,8 @@ export function AuthScreen({
 
         <Text style={styles.caption}>
           {isRegister
-            ? 'Use the fields above to create a new Ark account. Point the API field at your local or deployed Ark backend.'
-            : 'Use your existing Ark email and password to enter. If the app is running in a browser, confirm the API field points at the backend you want to use.'}
+            ? 'Use the fields above to create a new Ark account.'
+            : 'Use your existing Ark email and password to continue into The Ark.'}
         </Text>
       </View>
     </SurfaceCard>

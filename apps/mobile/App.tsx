@@ -214,11 +214,9 @@ export default function App() {
       return (
         <View style={styles.authShell}>
           <AuthScreen
-            apiBaseUrl={workspace.draft.apiBaseUrl}
             email={emailDraft}
             password={passwordDraft}
             authMode={authMode}
-            onApiBaseUrlChange={(value) => workspace.updateDraftField('apiBaseUrl', value)}
             onEmailChange={setEmailDraft}
             onPasswordChange={setPasswordDraft}
             onAuthModeChange={setAuthMode}
@@ -342,7 +340,6 @@ export default function App() {
           workspace.updateDraftField('readingMode', value);
           workspace.setOnboardingStep(0);
         }}
-        onApiBaseUrlChange={(value) => workspace.updateDraftField('apiBaseUrl', value)}
         onPersonChange={workspace.updatePerson}
         onResolveBirthplace={(slot) => void workspace.resolveBirthplace(slot)}
         onApplyResolvedPlace={workspace.applyResolvedPlaceCandidate}
