@@ -8,6 +8,7 @@ import threading
 from email.message import EmailMessage
 from pathlib import Path
 from typing import Any, Optional
+from urllib import error, request
 
 from app.services.env_service import load_local_env
 from app.services.state_service import get_state_dir, get_state_file
@@ -28,11 +29,22 @@ def _env_flag(name: str, default: bool = False) -> bool:
 
 def _mail_mode() -> str:
     configured = os.getenv("EMAIL_DELIVERY_MODE", "auto").strip().lower()
-    if configured in {"smtp", "debug", "disabled"}:
+    if configured in {"smtp", "debug", "disabled", "api"}:
         return configured
+    if _email_provider() and os.getenv("EMAIL_FROM_ADDRESS"):
+        return "api"
     if os.getenv("SMTP_HOST") and os.getenv("EMAIL_FROM_ADDRESS"):
         return "smtp"
     return "debug"
+
+
+def _email_provider() -> str:
+    configured = (os.getenv("EMAIL_PROVIDER") or "").strip().lower()
+    if configured:
+        return configured
+    if (os.getenv("RESEND_API_KEY") or "").strip():
+        return "resend"
+    return ""
 
 
 def _from_header() -> str:
@@ -146,12 +158,60 @@ def _smtp_send(recipient_email: str, composed: dict[str, str]) -> None:
         smtp.send_message(message)
 
 
+def _resend_send(recipient_email: str, composed: dict[str, str]) -> None:
+    api_key = (os.getenv("RESEND_API_KEY") or "").strip()
+    if not api_key:
+        raise RuntimeError("RESEND_API_KEY is not configured.")
+
+    payload = {
+        "from": _from_header(),
+        "to": [recipient_email],
+        "subject": composed["subject"],
+        "html": composed["html"],
+        "text": composed["text"],
+    }
+    raw = json.dumps(payload).encode("utf-8")
+    req = request.Request(
+        "https://api.resend.com/emails",
+        data=raw,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "the-ark-api/1.0",
+        },
+        method="POST",
+    )
+
+    try:
+        with request.urlopen(req, timeout=20) as response:
+            response.read()
+    except error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        try:
+            parsed = json.loads(body)
+            message = parsed.get("message") or parsed.get("name") or body
+        except json.JSONDecodeError:
+            message = body
+        raise RuntimeError(f"Resend API error ({exc.code}): {message}") from exc
+    except error.URLError as exc:
+        raise RuntimeError(f"Resend API request failed: {exc.reason}") from exc
+
+
+def _api_send(recipient_email: str, composed: dict[str, str]) -> None:
+    provider = _email_provider()
+    if provider == "resend":
+        _resend_send(recipient_email, composed)
+        return
+    raise RuntimeError(f"Unsupported EMAIL_PROVIDER: {provider or 'unset'}")
+
+
 class EmailDeliveryService:
     @staticmethod
     def deliver_token_email(kind: str, recipient_email: str, display_name: Optional[str], token: str, expires_at: str) -> dict[str, Any]:
         mode = _mail_mode()
         composed = _compose(kind, recipient_email, display_name, token, expires_at)
-        expose_tokens = _env_flag("EMAIL_DEBUG_EXPOSE_TOKENS", default=(mode != "smtp"))
+        expose_tokens = _env_flag("EMAIL_DEBUG_EXPOSE_TOKENS", default=(mode not in {"smtp", "api"}))
 
         if mode == "disabled":
             return {
@@ -188,6 +248,38 @@ class EmailDeliveryService:
                     "prototype_token": token if expose_tokens else None,
                     "notes": [
                         "SMTP delivery failed, so the message was captured in the local debug outbox instead.",
+                        str(exc),
+                    ],
+                }
+
+        if mode == "api":
+            try:
+                _api_send(recipient_email, composed)
+                return {
+                    "delivery_mode": "api",
+                    "delivery_target": recipient_email,
+                    "prototype_token": None,
+                    "notes": [f"A transactional email was sent to {recipient_email} via {_email_provider()}."],
+                }
+            except Exception as exc:
+                debug_entry = {
+                    "kind": kind,
+                    "recipient_email": recipient_email,
+                    "subject": composed["subject"],
+                    "text": composed["text"],
+                    "html": composed["html"],
+                    "token": token,
+                    "expires_at": expires_at,
+                    "failure": str(exc),
+                    "provider": _email_provider(),
+                }
+                _record_debug_message(debug_entry)
+                return {
+                    "delivery_mode": "debug-fallback",
+                    "delivery_target": recipient_email,
+                    "prototype_token": token if expose_tokens else None,
+                    "notes": [
+                        f"{(_email_provider() or 'Email API').capitalize()} delivery failed, so the message was captured in the local debug outbox instead.",
                         str(exc),
                     ],
                 }
