@@ -298,8 +298,6 @@ export function ReadingScreen({
 
       {activeTab === 'reading' ? (
         <>
-          <Text style={styles.termHint}>Tap underlined terms for quick definitions.</Text>
-
           <SurfaceCard title="Visual chart map" subtitle="The outer ring shows the natal chart. The inner ring shows the timing or live overlay. The center lines show major aspects.">
             <Text style={styles.chartHelper}>Use the chart to orient yourself first, then move through the reading in order.</Text>
             <ChartWheel
@@ -310,6 +308,8 @@ export function ReadingScreen({
             />
             <SecondaryButton label="Open full chart details" onPress={onOpenTechnical} icon={<MaterialCommunityIcons name="chart-bubble" size={17} color={palette.ink} />} />
           </SurfaceCard>
+
+          <Text style={styles.termHint}>Tap underlined terms for quick definitions.</Text>
 
           {summaryHero}
 
