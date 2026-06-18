@@ -257,19 +257,21 @@ export function ReadingScreen({
     result.technical_summary?.chart_data?.traditional_context?.spirit ? `Spirit: ${result.technical_summary.chart_data.traditional_context.spirit.sign} ${formatHouseRef(result.technical_summary.chart_data.traditional_context.spirit.house)}` : null,
   ].filter((value): value is string => Boolean(value));
 
+  const summaryHero = (
+    <View style={styles.heroCard}>
+      <Text style={styles.eyebrow}>{result.chart_type === 'synastry' ? 'Relationship Reading' : 'Reading'}</Text>
+      <Text style={styles.title}>Your year</Text>
+      <Text style={styles.summaryLead}>{openingSummary.title}</Text>
+      {openingSummary.paragraphs.map((paragraph, index) => (
+        <GlossaryText key={`${index}-${paragraph.slice(0, 24)}`} text={paragraph} textStyle={styles.body} />
+      ))}
+      {openingSummary.testimony ? <Text style={styles.oracle}>{openingSummary.testimony}</Text> : null}
+      {result.reading.oracle ? <Text style={styles.supporting}>{result.reading.oracle}</Text> : null}
+    </View>
+  );
+
   return (
     <>
-      <View style={styles.heroCard}>
-        <Text style={styles.eyebrow}>{result.chart_type === 'synastry' ? 'Relationship Reading' : 'Reading'}</Text>
-        <Text style={styles.title}>Your year</Text>
-        <Text style={styles.summaryLead}>{openingSummary.title}</Text>
-        {openingSummary.paragraphs.map((paragraph, index) => (
-          <GlossaryText key={`${index}-${paragraph.slice(0, 24)}`} text={paragraph} textStyle={styles.body} />
-        ))}
-        {openingSummary.testimony ? <Text style={styles.oracle}>{openingSummary.testimony}</Text> : null}
-        {result.reading.oracle ? <Text style={styles.supporting}>{result.reading.oracle}</Text> : null}
-      </View>
-
       <View style={styles.tabWrap}>
         <Pressable style={[styles.tabPill, activeTab === 'reading' && styles.tabPillActive]} onPress={() => setActiveTab('reading')}>
           <Text style={[styles.tabText, activeTab === 'reading' && styles.tabTextActive]}>Reading</Text>
@@ -293,6 +295,8 @@ export function ReadingScreen({
             />
             <SecondaryButton label="Open full chart details" onPress={onOpenTechnical} icon={<MaterialCommunityIcons name="chart-bubble" size={17} color={palette.ink} />} />
           </SurfaceCard>
+
+          {summaryHero}
 
           {annualBlock ? (
             <SurfaceCard title="Why this year has this theme" subtitle="Annual timing and emphasis.">
@@ -401,6 +405,8 @@ export function ReadingScreen({
         </>
       ) : (
         <>
+          {summaryHero}
+
           <SurfaceCard title="How to read this page" subtitle="Move through the reading one section at a time.">
             <View style={styles.flowStack}>
               {readingFlow.map((step, index) => (
