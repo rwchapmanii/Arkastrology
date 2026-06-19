@@ -250,6 +250,7 @@ export function ReadingScreen({
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<Array<GroundedChatTurn & { sources?: GroundedChatSource[]; notes?: string[] }>>([]);
   const blocks = useMemo(() => dedupeBlocks(result.interpretation_blocks), [result.interpretation_blocks]);
+  const dailyHoroscope = result.chart_type === 'natal' ? result.daily_horoscope : null;
   const annualBlock = blockByType(blocks, 'annual_profection');
   const yearMapBlock = blockByType(blocks, 'year_map');
   const fortuneBlock = blockByType(blocks, 'fortune_spirit');
@@ -358,9 +359,49 @@ export function ReadingScreen({
     </SurfaceCard>
   );
 
+  const dailyHoroscopeCard = dailyHoroscope ? (
+    <SurfaceCard title={dailyHoroscope.title} subtitle={dailyHoroscope.date} accent>
+      <View style={styles.horoscopeHeader}>
+        <Text style={styles.horoscopeHeadline}>{dailyHoroscope.headline}</Text>
+        {dailyHoroscope.citations?.length ? (
+          <Text style={styles.horoscopeSources}>{dailyHoroscope.citations.slice(0, 3).join(' • ')}</Text>
+        ) : null}
+      </View>
+      <View style={styles.flowStack}>
+        <GlossaryText text={dailyHoroscope.overview} textStyle={styles.body} />
+        <GlossaryText text={dailyHoroscope.focus} textStyle={styles.body} />
+      </View>
+      <View style={styles.horoscopeGrid}>
+        <View style={styles.horoscopePanel}>
+          <Text style={styles.sectionLabel}>Opportunity</Text>
+          <GlossaryText text={dailyHoroscope.opportunity} textStyle={styles.panelText} />
+        </View>
+        <View style={styles.horoscopePanel}>
+          <Text style={styles.sectionLabel}>Watch for</Text>
+          <GlossaryText text={dailyHoroscope.caution} textStyle={styles.panelText} />
+        </View>
+      </View>
+      <View style={styles.horoscopeActionCard}>
+        <Text style={styles.sectionLabel}>Best move today</Text>
+        <GlossaryText text={dailyHoroscope.action} textStyle={styles.body} />
+        <Text style={styles.sectionLabel}>Timing</Text>
+        <GlossaryText text={dailyHoroscope.timing} textStyle={styles.supporting} />
+      </View>
+      {dailyHoroscope.active_transits?.length ? (
+        <View style={styles.drawerSection}>
+          <Text style={styles.sectionLabel}>Active transits</Text>
+          {dailyHoroscope.active_transits.map((line) => (
+            <Text key={line} style={styles.flowText}>• {line}</Text>
+          ))}
+        </View>
+      ) : null}
+    </SurfaceCard>
+  ) : null;
+
   return (
     <>
       {activeTab === 'reading' ? chartMapCard : null}
+      {activeTab === 'reading' ? dailyHoroscopeCard : null}
 
       <View style={styles.tabWrap}>
         <Pressable style={[styles.tabPill, activeTab === 'reading' && styles.tabPillActive]} onPress={() => setActiveTab('reading')}>
@@ -623,8 +664,29 @@ const styles = StyleSheet.create({
   summaryLead: { fontSize: 20, lineHeight: 28, color: palette.ink, fontWeight: '700' },
   oracle: { fontSize: 14, lineHeight: 22, color: palette.ink, fontWeight: '700' },
   body: { fontSize: 15, lineHeight: 24, color: palette.ink },
+  panelText: { fontSize: 14, lineHeight: 22, color: palette.ink },
   supporting: { fontSize: 13, lineHeight: 21, color: palette.muted },
   whyLine: { fontSize: 14, lineHeight: 22, color: palette.ink, fontWeight: '700' },
+  horoscopeHeader: { gap: 6 },
+  horoscopeHeadline: { fontSize: 19, lineHeight: 27, color: palette.ink, fontWeight: '700' },
+  horoscopeSources: { fontSize: 11, lineHeight: 17, color: palette.muted, fontWeight: '600' },
+  horoscopeGrid: { gap: 10 },
+  horoscopePanel: {
+    backgroundColor: palette.surfaceStrong,
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: 16,
+    padding: 14,
+    gap: 6,
+  },
+  horoscopeActionCard: {
+    backgroundColor: palette.input,
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: 18,
+    padding: 16,
+    gap: 8,
+  },
   tabWrap: {
     flexDirection: 'row',
     gap: 6,

@@ -321,6 +321,20 @@ class PredictionCard(BaseModel):
     citations: List[str] = Field(default_factory=list)
 
 
+class DailyHoroscope(BaseModel):
+    title: str
+    date: str
+    headline: str
+    overview: str
+    focus: str
+    opportunity: str
+    caution: str
+    action: str
+    timing: str
+    active_transits: List[str] = Field(default_factory=list)
+    citations: List[str] = Field(default_factory=list)
+
+
 class SourceLens(BaseModel):
     lens: str
     labels: List[str]
@@ -355,6 +369,7 @@ class NatalReadingResponse(BaseModel):
     profile: BirthProfile
     technical_summary: TechnicalSummary
     reading: ReadingSection
+    daily_horoscope: Optional[DailyHoroscope] = None
     source_lenses: List[SourceLens]
     prediction_cards: List[PredictionCard] = Field(default_factory=list)
     interpretation_blocks: List[InterpretationBlock] = Field(default_factory=list)
@@ -368,6 +383,7 @@ class SynastryReadingResponse(BaseModel):
     secondary_profile: BirthProfile
     technical_summary: SynastryTechnicalSummary
     reading: ReadingSection
+    daily_horoscope: Optional[DailyHoroscope] = None
     source_lenses: List[SourceLens]
     prediction_cards: List[PredictionCard] = Field(default_factory=list)
     interpretation_blocks: List[InterpretationBlock] = Field(default_factory=list)

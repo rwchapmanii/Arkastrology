@@ -222,6 +222,24 @@ class AstrologyAccuracyTests(unittest.TestCase):
         self.assertEqual(response.prediction_cards[1].title, "How Fortune and Spirit divide the story")
         self.assertEqual(response.technical_summary.year_map.fortune_spirit_alignment, "split")
 
+    def test_natal_response_includes_daily_horoscope(self):
+        profile = self.build_profile()
+        response = NatalReadingService.build_response(NatalReadingRequest(profile=profile))
+
+        self.assertEqual(response.status, "natal_calculated")
+        self.assertIsNotNone(response.daily_horoscope)
+        self.assertEqual(response.daily_horoscope.title, "Daily horoscope")
+        self.assertTrue(response.daily_horoscope.date)
+        self.assertTrue(response.daily_horoscope.headline)
+        self.assertTrue(response.daily_horoscope.overview)
+        self.assertTrue(response.daily_horoscope.focus)
+        self.assertTrue(response.daily_horoscope.opportunity)
+        self.assertTrue(response.daily_horoscope.caution)
+        self.assertTrue(response.daily_horoscope.action)
+        self.assertTrue(response.daily_horoscope.timing)
+        self.assertTrue(response.daily_horoscope.active_transits)
+        self.assertTrue(any(contact.transit_body in response.daily_horoscope.headline for contact in response.technical_summary.transit_aspects[:1]))
+
     def test_synastry_unknown_time_uses_planetary_fallback(self):
         primary = self.build_profile(name="Person A")
         secondary = self.build_profile(name="Person B", birth_date="1981-05-10", birth_time="09:30", time_precision="unknown")

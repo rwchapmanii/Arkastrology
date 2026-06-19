@@ -6,10 +6,13 @@ from zoneinfo import ZoneInfo
 
 from app.models.chart import (
     BirthProfile,
+    DailyHoroscope,
     InterpretationBlock,
     NatalTechnicalChart,
     PredictionCard,
+    TopicJudgmentRecord,
     TransitAspectRecord,
+    YearMapRecord,
 )
 from app.services.aspect_service import AspectPolicyService
 from app.services.astrology_settings import MAJOR_PLANETS
@@ -473,6 +476,228 @@ class TransitForecastService:
                 *threshold_meta.get("source_lens_tags", []),
                 *cls._planet_rite_lookup(ontology).get(top_contact.transit_body, {}).get("source_lens_tags", []),
             ]),
+        )
+
+    @staticmethod
+    def _house_lookup(ontology: Dict) -> Dict[int, Dict]:
+        return {item["house_number"]: item for item in ontology.get("houses", [])}
+
+    @staticmethod
+    def _topic_phrase(values: List[str], limit: int = 3) -> str:
+        items = [value for value in values[:limit] if value]
+        if not items:
+            return "the active topics of the day"
+        if len(items) == 1:
+            return items[0]
+        if len(items) == 2:
+            return f"{items[0]} and {items[1]}"
+        return ", ".join(items[:-1]) + f", and {items[-1]}"
+
+    @classmethod
+    def _house_meta_from_id(cls, ontology: Dict, house_id: Optional[str]) -> Dict:
+        if not house_id or not house_id.startswith("House"):
+            return {}
+        try:
+            house_number = int(house_id.replace("House", ""))
+        except ValueError:
+            return {}
+        return cls._house_lookup(ontology).get(house_number, {})
+
+    @classmethod
+    def _house_title(cls, ontology: Dict, house_id: Optional[str]) -> str:
+        house_meta = cls._house_meta_from_id(ontology, house_id)
+        return house_meta.get("display_name", house_id or "the relevant part of life")
+
+    @classmethod
+    def _house_topics(cls, ontology: Dict, house_id: Optional[str]) -> str:
+        house_meta = cls._house_meta_from_id(ontology, house_id)
+        topics = house_meta.get("classical_topics", []) or house_meta.get("modern_topics", [])
+        return cls._topic_phrase(topics, 3)
+
+    @staticmethod
+    def _body_theme(name: str) -> str:
+        return {
+            "Sun": "identity, purpose, and visibility",
+            "Moon": "emotions, habits, and embodiment",
+            "Mercury": "thinking, speech, and decisions",
+            "Venus": "love, pleasure, and value",
+            "Mars": "action, pressure, and conflict",
+            "Jupiter": "growth, belief, and opportunity",
+            "Saturn": "duty, limits, and long-term structure",
+            "Asc": "your outward style and first impression",
+            "MC": "career, reputation, and direction",
+        }.get(name, f"{name.lower()} matters")
+
+    @classmethod
+    def _format_calendar_label(cls, timestamp: Optional[str]) -> str:
+        parsed = cls._parse_timestamp(timestamp)
+        if not parsed:
+            return "today"
+        return parsed.strftime("%A, %B %d, %Y").replace(" 0", " ")
+
+    @classmethod
+    def _format_moment_label(cls, timestamp: Optional[str], timezone_label: Optional[str] = None) -> Optional[str]:
+        parsed = cls._parse_timestamp(timestamp)
+        if not parsed:
+            return None
+        stamp = parsed.strftime("%A, %B %d at %I:%M %p").replace(" 0", " ")
+        return f"{stamp} {timezone_label}".strip() if timezone_label else stamp
+
+    @classmethod
+    def _timing_sentence(cls, contact: TransitAspectRecord, transit_timezone: str) -> str:
+        exact_label = cls._format_moment_label(contact.exact_at, transit_timezone)
+        window_start = cls._format_moment_label(contact.peak_window_start, transit_timezone)
+        window_end = cls._format_moment_label(contact.peak_window_end, transit_timezone)
+        if contact.phase == "exact" and exact_label:
+            return f"This contact is exact now, with its clearest expression around {exact_label}."
+        if contact.phase == "applying" and exact_label:
+            return f"This influence is still building and points toward an exact hit around {exact_label}."
+        if contact.phase == "separating" and exact_label:
+            return f"This influence has just passed its exact point near {exact_label}, but it is still echoing through the day."
+        if window_start and window_end:
+            return f"Its strongest window runs from {window_start} through {window_end}."
+        return "This influence is live today, so respond to it in real time instead of reading it only in retrospect."
+
+    @classmethod
+    def _transit_line(cls, contact: TransitAspectRecord, ontology: Dict) -> str:
+        natal_house = cls._house_title(ontology, contact.natal_house)
+        phase_bits = [contact.phase or None, f"orb {contact.orb:.1f}°"]
+        return (
+            f"{contact.transit_body} {contact.type.lower()} {cls._display_body_name(contact.natal_body)}"
+            f" in {natal_house.lower()} ({' • '.join(bit for bit in phase_bits if bit)})"
+        )
+
+    @classmethod
+    def build_natal_daily_horoscope(
+        cls,
+        contacts: List[TransitAspectRecord],
+        transit_timestamp: Optional[str],
+        transit_timezone: Optional[str],
+        ontology: Dict,
+        year_map: Optional[YearMapRecord] = None,
+        topic_judgments: Optional[List[TopicJudgmentRecord]] = None,
+    ) -> Optional[DailyHoroscope]:
+        topic_judgments = topic_judgments or []
+        transit_timezone = transit_timezone or "local time"
+        top_contact = contacts[0] if contacts else None
+        second_contact = contacts[1] if len(contacts) > 1 else None
+        strongest_topic = max(topic_judgments, key=lambda item: item.score) if topic_judgments else None
+        strained_topic = min(topic_judgments, key=lambda item: item.score) if topic_judgments else None
+        if (
+            strongest_topic
+            and strained_topic
+            and strongest_topic.key == strained_topic.key
+            and len(topic_judgments) > 1
+        ):
+            strained_topic = sorted(topic_judgments, key=lambda item: item.score)[1]
+
+        rites = cls._planet_rite_lookup(ontology)
+        thresholds = cls._threshold_lookup(ontology)
+        title = "Daily horoscope"
+        date_label = cls._format_calendar_label(transit_timestamp)
+
+        if not top_contact:
+            year_focus = cls._topic_phrase(year_map.activated_topics, 3) if year_map and year_map.activated_topics else "the themes your chart is already repeating"
+            return DailyHoroscope(
+                title=title,
+                date=date_label,
+                headline="The day is quieter than the larger year pattern.",
+                overview=(
+                    f"Today is better read through the larger annual frame than through a single dramatic transit. "
+                    f"The chart keeps returning to {year_focus}, so steady continuity matters more than sudden reaction."
+                ),
+                focus=(
+                    f"Keep your attention on {year_focus}. This is a day for following what the chart has already put on your desk rather than chasing a brand-new signal."
+                ),
+                opportunity=year_map.guidance if year_map and year_map.guidance else "Consolidate what is already working before forcing new momentum.",
+                caution="Do not assume a quiet sky means nothing is happening. Often it means the deeper annual story wants patience rather than drama.",
+                action="Choose one concrete task that serves the larger year theme and finish it cleanly.",
+                timing="The current sky is relatively quiet, so the best timing move is steadiness.",
+                citations=cls._resolve_labels(["traditional_annual_profection", "traditional_solar_return", "traditional_fortune_spirit"]),
+            )
+
+        top_threshold = thresholds.get(top_contact.type, {})
+        top_rite = rites.get(top_contact.transit_body, {})
+        house_id = top_contact.natal_house or top_contact.transit_house
+        house_title = cls._house_title(ontology, house_id)
+        house_topics = cls._house_topics(ontology, house_id)
+        year_clause = ""
+        if year_map and year_map.activated_topics:
+            year_clause = (
+                f" Because your current year is already emphasizing {cls._topic_phrase(year_map.activated_topics, 3)}, "
+                f"today's movement should be read as a live episode inside that larger storyline."
+            )
+        support_clause = (
+            f" The easiest support still sits around {strongest_topic.title.lower()}."
+            if strongest_topic and strongest_topic.score > 0 else ""
+        )
+        strain_clause = (
+            f" The area needing the most care remains {strained_topic.title.lower()}."
+            if strained_topic and strained_topic.score < 0 else ""
+        )
+        second_clause = ""
+        if second_contact:
+            second_clause = (
+                f" A second influence comes from {second_contact.transit_body} {second_contact.type.lower()} "
+                f"{cls._display_body_name(second_contact.natal_body)}, so the day is not one-note."
+            )
+
+        headline = f"{top_contact.transit_body} {top_contact.type.lower()} {cls._display_body_name(top_contact.natal_body)} sets the tone for {date_label.lower()}."
+        overview = (
+            f"Today's chart is led by {top_contact.transit_body} {top_contact.type.lower()} {cls._display_body_name(top_contact.natal_body)}. "
+            f"This puts immediate pressure on {house_title.lower()}, especially {house_topics}.{year_clause}{support_clause}{strain_clause}"
+        ).strip()
+        focus = (
+            f"The practical focus today is {house_title.lower()}: {house_topics}. "
+            f"More specifically, the sky is asking for a conscious response around {cls._body_theme(top_contact.natal_body)}.{second_clause}"
+        ).strip()
+        opportunity = (
+            f"{top_threshold.get('action', 'Answer the day with one precise act.')} "
+            f"{(top_rite.get('omens', [])[:1] or ['Use the live signal instead of stale assumptions.'])[0].capitalize()}."
+        )
+        caution_seed = (top_threshold.get("cautions", [])[:1] or top_rite.get("cautions", [])[:1] or ["reactivity"])[0]
+        caution = (
+            f"Watch for {caution_seed} today. "
+            + (
+                f"The chart is already touchier around {strained_topic.title.lower()}, so do not let one trigger spill into the whole day."
+                if strained_topic and strained_topic.score < 0 else
+                "Do not let a passing transit harden into a total story about your life."
+            )
+        )
+        action = (
+            f"{(top_rite.get('rituals', [])[:1] or ['Take one grounded action that matches the chart.'])[0]} "
+            + (
+                f"Pair that with this year-guidance: {year_map.guidance}"
+                if year_map and year_map.guidance else
+                "Let the action be concrete, measured, and timely."
+            )
+        )
+        timing = cls._timing_sentence(top_contact, transit_timezone)
+        active_transits = [cls._transit_line(contact, ontology) for contact in contacts[:3]]
+        citation_ids = {
+            *top_threshold.get("source_lens_tags", []),
+            *top_rite.get("source_lens_tags", []),
+            "traditional_annual_profection",
+            "traditional_solar_return",
+            "tetrabiblos_house_topic",
+            "tetrabiblos_planetary_quality",
+        }
+        if strongest_topic:
+            citation_ids.update(strongest_topic.citations)
+        if strained_topic:
+            citation_ids.update(strained_topic.citations)
+        return DailyHoroscope(
+            title=title,
+            date=date_label,
+            headline=headline,
+            overview=overview,
+            focus=focus,
+            opportunity=opportunity,
+            caution=caution,
+            action=action,
+            timing=timing,
+            active_transits=active_transits,
+            citations=sorted(cls._resolve_labels(list(citation_ids))),
         )
 
     @classmethod

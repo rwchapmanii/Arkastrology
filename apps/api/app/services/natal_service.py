@@ -81,6 +81,7 @@ class NatalReadingService:
         counts = {key: len(value) for key, value in ontology.items()}
         source_lenses = NatalReadingService._build_source_lenses(request)
         prediction_cards: List[PredictionCard] = []
+        daily_horoscope = None
         interpretation_blocks = []
         notes = [
             f"Birth time precision received as: {request.profile.time_precision}.",
@@ -169,6 +170,12 @@ class NatalReadingService:
                         chart_data=chart_data,
                         ontology=ontology,
                         include_red_book_prompts=request.include_red_book_prompts,
+                    )
+                    daily_horoscope = TransitForecastService.build_natal_daily_horoscope(
+                        contacts=transit_aspects,
+                        transit_timestamp=transit_timestamp,
+                        transit_timezone=transit_timezone,
+                        ontology=ontology,
                     )
                     reading = NatalInterpretationService.build_planetary_fallback_reading_section(
                         chart_data=chart_data,
@@ -269,6 +276,14 @@ class NatalReadingService:
                     annual_profection=annual_profection,
                     solar_return=solar_return,
                 )
+                daily_horoscope = TransitForecastService.build_natal_daily_horoscope(
+                    contacts=transit_aspects,
+                    transit_timestamp=transit_timestamp,
+                    transit_timezone=transit_timezone,
+                    ontology=ontology,
+                    year_map=year_map,
+                    topic_judgments=topic_judgments,
+                )
                 reading = NatalInterpretationService.build_reading_section(
                     chart_data=chart_data,
                     ontology=ontology,
@@ -287,6 +302,8 @@ class NatalReadingService:
                 notes.append("Traditional context now includes sect, house rulers, Fortune/Spirit, planetary condition, annual profection, and a solar return overlay.")
                 notes.append("Structured topic judgments now expose explicit evidence trails, confidence labels, and caveats rather than only prose summaries.")
                 notes.append("Live transits are being treated as a supplemental timing layer after the natal traditional frame, not as the primary timing method.")
+                if daily_horoscope:
+                    notes.append(f"Daily horoscope synthesized for {daily_horoscope.date} from the current sky plus the larger natal year pattern.")
                 if transit_timestamp and transit_timezone:
                     notes.append(f"Transit forecast anchored to {transit_timestamp[:16].replace('T', ' ')} {transit_timezone}.")
                 if solar_return and solar_return.return_timestamp:
@@ -328,6 +345,7 @@ class NatalReadingService:
                 year_map=year_map,
             ),
             reading=reading,
+            daily_horoscope=daily_horoscope,
             source_lenses=source_lenses,
             prediction_cards=prediction_cards,
             interpretation_blocks=interpretation_blocks,

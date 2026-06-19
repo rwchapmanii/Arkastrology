@@ -26,6 +26,20 @@ export type PredictionCard = {
   citations: string[];
 };
 
+export type DailyHoroscope = {
+  title: string;
+  date: string;
+  headline: string;
+  overview: string;
+  focus: string;
+  opportunity: string;
+  caution: string;
+  action: string;
+  timing: string;
+  active_transits: string[];
+  citations: string[];
+};
+
 export type EvidenceItem = {
   observation: string;
   rule: string;
@@ -253,6 +267,7 @@ export type AnyReadingResponse = {
   chart_type: 'natal' | 'synastry';
   status: string;
   reading: ReadingSection;
+  daily_horoscope?: DailyHoroscope | null;
   source_lenses?: SourceLens[];
   prediction_cards?: PredictionCard[];
   interpretation_blocks: InterpretationBlock[];
