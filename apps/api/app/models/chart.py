@@ -325,6 +325,11 @@ class DailyHoroscope(BaseModel):
     title: str
     date: str
     headline: str
+    overview: Optional[str] = None
+    focus: Optional[str] = None
+    opportunity: Optional[str] = None
+    caution: Optional[str] = None
+    action: Optional[str] = None
     main_transit: Optional[str] = None
     day_thesis: Optional[str] = None
     what_this_means: List[str] = Field(default_factory=list)

@@ -944,6 +944,11 @@ class TransitForecastService:
                 "title": title,
                 "date": date_label,
                 "headline": "The sky is quieter today, so the yearly pattern matters more than a single dramatic trigger.",
+                "overview": "Today is better read through the larger annual frame than through one dramatic transit trigger.",
+                "focus": f"Keep your attention on {year_focus}. This is a steadier day for follow-through than for chasing fresh drama.",
+                "opportunity": "Finish one practical task that supports the larger year theme.",
+                "caution": "Do not mistake a quieter sky for a day with no meaning or no consequences.",
+                "action": "Choose one unfinished matter tied to the bigger year theme and complete the next concrete step.",
                 "main_transit": "No single transit is loud enough to dominate the day, which shifts the focus toward continuity, follow-through, and the larger story.",
                 "day_thesis": f"Today is best used to stabilize {year_focus} rather than chase fresh drama.",
                 "what_this_means": [
@@ -1089,6 +1094,15 @@ class TransitForecastService:
             "headline": cls._nonfatalistic(
                 f"{top_contact.transit_body} {top_contact.type.lower()} {cls._display_body_name(top_contact.natal_body)} sets the tone for {date_label.lower()}."
             ),
+            "overview": cls._nonfatalistic(
+                f"Today's chart is led by {top_contact.transit_body} {top_contact.type.lower()} {cls._display_body_name(top_contact.natal_body)}, which concentrates attention in {house_title.lower()}."
+            ),
+            "focus": cls._nonfatalistic(
+                f"The practical focus today is {house_title.lower()}: {house_topics}. The immediate task is to respond consciously around {cls._body_theme(top_contact.natal_body)}."
+            ),
+            "opportunity": opportunities[0] if opportunities else best_move_primary,
+            "caution": watch_fors[0] if watch_fors else "Do not let a passing transit become the whole story of the day.",
+            "action": best_move_primary,
             "main_transit": cls._nonfatalistic(main_transit),
             "day_thesis": day_thesis,
             "what_this_means": what_this_means,
