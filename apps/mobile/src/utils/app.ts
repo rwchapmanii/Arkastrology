@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { AppDraft, AuthState, PersonDraft, ReadingMode } from '../types/app';
+import { AppDraft, AuthState, DirectoryProfile, PersonDraft, ReadingMode } from '../types/app';
 
 export const APP_DRAFT_STORAGE_KEY = 'the_ark_app_draft_v1';
 export const PERSON_STORAGE_KEY = 'the_ark_people_v1';
@@ -132,4 +132,24 @@ export function getDeviceTimezoneName() {
 
 export function getStepLabels(mode: ReadingMode) {
   return mode === 'synastry' ? ['Setup', 'Review'] : ['Setup', 'Review'];
+}
+
+export function personDraftFromDirectoryProfile(profile: DirectoryProfile): PersonDraft {
+  return {
+    profileLabel: profile.display_name,
+    name: profile.profile.name || profile.display_name,
+    birthDate: profile.profile.birth_date,
+    birthTime: profile.profile.birth_time || '',
+    birthCity: profile.profile.birth_city,
+    birthCountry: profile.profile.birth_country,
+    timePrecision: profile.profile.time_precision,
+    latitude: typeof profile.profile.latitude === 'number' ? String(profile.profile.latitude) : '',
+    longitude: typeof profile.profile.longitude === 'number' ? String(profile.profile.longitude) : '',
+    utcOffset: profile.profile.utc_offset || '',
+    timezoneName: profile.profile.timezone_name || '',
+    currentLatitude: typeof profile.profile.current_latitude === 'number' ? String(profile.profile.current_latitude) : '',
+    currentLongitude: typeof profile.profile.current_longitude === 'number' ? String(profile.profile.current_longitude) : '',
+    currentUtcOffset: profile.profile.current_utc_offset || '',
+    currentTimezoneName: profile.profile.current_timezone_name || '',
+  };
 }

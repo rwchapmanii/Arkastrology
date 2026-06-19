@@ -452,6 +452,63 @@ export type AccountProfileResponse = {
   profile: AccountProfile;
 };
 
+export type DirectoryProfile = {
+  profile_id: string;
+  kind: 'user' | 'celebrity';
+  display_name: string;
+  headline?: string | null;
+  biography?: string | null;
+  tags: string[];
+  profile: {
+    name: string;
+    birth_date: string;
+    birth_time: string;
+    birth_city: string;
+    birth_country: string;
+    time_precision: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    utc_offset?: string | null;
+    timezone_name?: string | null;
+    current_latitude?: number | null;
+    current_longitude?: number | null;
+    current_utc_offset?: string | null;
+    current_timezone_name?: string | null;
+  };
+  is_discoverable: boolean;
+  relationship_added: boolean;
+  source_label?: string | null;
+};
+
+export type DirectoryProfileListResponse = {
+  status: string;
+  items: DirectoryProfile[];
+  total: number;
+};
+
+export type RelationshipEntry = {
+  relationship_id: string;
+  profile_id: string;
+  kind: 'user' | 'celebrity';
+  display_name: string;
+  headline?: string | null;
+  biography?: string | null;
+  added_at: string;
+  tags: string[];
+  profile: DirectoryProfile['profile'];
+  source_label?: string | null;
+};
+
+export type RelationshipListResponse = {
+  status: string;
+  items: RelationshipEntry[];
+};
+
+export type PublicChartProfileResponse = {
+  status: string;
+  public_profile?: DirectoryProfile | null;
+};
+
 export type ReadingHistoryTagFacet = {
   tag: string;
   count: number;

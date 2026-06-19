@@ -7,6 +7,7 @@ import { palette } from './src/constants/theme';
 import { useAccountProfile } from './src/hooks/useAccountProfile';
 import { useAuthSession } from './src/hooks/useAuthSession';
 import { useReadingHistory } from './src/hooks/useReadingHistory';
+import { useRelationshipDirectory } from './src/hooks/useRelationshipDirectory';
 import { useReadingWorkspace } from './src/hooks/useReadingWorkspace';
 import { AccountScreen } from './src/screens/AccountScreen';
 import { AuthScreen } from './src/screens/AuthScreen';
@@ -15,7 +16,8 @@ import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { ReadingHistoryScreen } from './src/screens/ReadingHistoryScreen';
 import { ReadingScreen } from './src/screens/ReadingScreen';
 import { TechnicalChartScreen } from './src/screens/TechnicalChartScreen';
-import { InterpretationBlock, ScreenMode } from './src/types/app';
+import { DirectoryProfile, InterpretationBlock, ScreenMode } from './src/types/app';
+import { personDraftFromDirectoryProfile } from './src/utils/app';
 
 export default function App() {
   const scrollRef = useRef<ScrollView | null>(null);
@@ -37,6 +39,7 @@ export default function App() {
   const workspace = useReadingWorkspace(authState);
   const readingHistory = useReadingHistory(authState);
   const accountProfile = useAccountProfile(authState);
+  const relationshipDirectory = useRelationshipDirectory(authState);
 
   const [screenMode, setScreenMode] = useState<ScreenMode>('auth');
   const [authMode, setAuthMode] = useState<'sign in' | 'register' | 'reset'>('sign in');
@@ -48,10 +51,10 @@ export default function App() {
   const [newPasswordDraft, setNewPasswordDraft] = useState('');
 
   const combinedMessage = useMemo(
-    () => restoreError || workspace.error || readingHistory.historyError || accountProfile.profileError || workspace.saveMessage,
-    [restoreError, workspace.error, readingHistory.historyError, accountProfile.profileError, workspace.saveMessage],
+    () => restoreError || workspace.error || readingHistory.historyError || accountProfile.profileError || relationshipDirectory.directoryError || workspace.saveMessage,
+    [restoreError, workspace.error, readingHistory.historyError, accountProfile.profileError, relationshipDirectory.directoryError, workspace.saveMessage],
   );
-  const isError = Boolean(restoreError || workspace.error || readingHistory.historyError || accountProfile.profileError);
+  const isError = Boolean(restoreError || workspace.error || readingHistory.historyError || accountProfile.profileError || relationshipDirectory.directoryError);
 
   useEffect(() => {
     if (!authReady || !workspace.draftLoaded) return;
@@ -75,6 +78,7 @@ export default function App() {
     if (workspace.error) workspace.setError(null);
     if (readingHistory.historyError) readingHistory.setHistoryError(null);
     if (accountProfile.profileError) accountProfile.setProfileError(null);
+    if (relationshipDirectory.directoryError) relationshipDirectory.setDirectoryError(null);
     if (workspace.saveMessage) workspace.setSaveMessage(null);
   }
 
@@ -151,6 +155,51 @@ export default function App() {
     } catch (err) {
       workspace.setError(err instanceof Error ? err.message : 'Could not save profile.');
     }
+  }
+
+  async function handleSearchDirectory() {
+    try {
+      await relationshipDirectory.searchDirectory(workspace.draft.apiBaseUrl);
+      workspace.setSaveMessage('Directory refreshed.');
+      workspace.setError(null);
+    } catch (err) {
+      workspace.setError(err instanceof Error ? err.message : 'Could not search directory.');
+    }
+  }
+
+  async function handleAddRelationship(profileId: string) {
+    try {
+      await relationshipDirectory.addRelationshipEntry(profileId, workspace.draft.apiBaseUrl);
+      workspace.setSaveMessage('Relationship added.');
+      workspace.setError(null);
+    } catch (err) {
+      workspace.setError(err instanceof Error ? err.message : 'Could not add relationship.');
+    }
+  }
+
+  async function handleRemoveRelationship(profileId: string) {
+    try {
+      await relationshipDirectory.removeRelationshipEntry(profileId, workspace.draft.apiBaseUrl);
+      workspace.setSaveMessage('Relationship removed.');
+      workspace.setError(null);
+    } catch (err) {
+      workspace.setError(err instanceof Error ? err.message : 'Could not remove relationship.');
+    }
+  }
+
+  async function handlePublishPrimaryProfile() {
+    try {
+      await relationshipDirectory.publishFromPerson(workspace.draft.primary, workspace.draft.apiBaseUrl);
+      workspace.setSaveMessage('Your public chart profile is now live in the Ark directory.');
+      workspace.setError(null);
+    } catch (err) {
+      workspace.setError(err instanceof Error ? err.message : 'Could not publish chart profile.');
+    }
+  }
+
+  function handleLoadDirectoryProfile(slot: 'primary' | 'secondary', profile: DirectoryProfile) {
+    workspace.loadPersonDraft(personDraftFromDirectoryProfile(profile), slot, profile.display_name);
+    workspace.setError(null);
   }
 
   async function handleRequestVerification() {
@@ -242,6 +291,8 @@ export default function App() {
         <AccountScreen
           authState={authState}
           savedPeople={workspace.savedPeople}
+          relationships={relationshipDirectory.relationships}
+          relationshipsLoading={relationshipDirectory.relationshipLoading}
           includeJungian={workspace.draft.includeJungian}
           includeRedBookPrompts={workspace.draft.includeRedBookPrompts}
           profileDraft={accountProfile.profileDraft}
@@ -252,6 +303,8 @@ export default function App() {
           onToggleJungian={(value) => void handlePreferenceChange('include_jungian_default', value)}
           onToggleRedBook={(value) => void handlePreferenceChange('include_red_book_prompts_default', value)}
           onOpenHistory={() => setScreenMode('history')}
+          onRefreshRelationships={() => void relationshipDirectory.refreshRelationships(workspace.draft.apiBaseUrl)}
+          onRemoveRelationship={(profileId) => void handleRemoveRelationship(profileId)}
           onRequestVerification={() => void handleRequestVerification()}
           onBack={() => setScreenMode(workspace.result ? 'reading' : 'onboarding')}
           onSignOut={() => void handleSignOut()}
@@ -352,6 +405,16 @@ export default function App() {
         canAdvance={workspace.canAdvance}
         stepLabels={workspace.stepLabels}
         savedPeople={workspace.savedPeople}
+        directoryEnabled={relationshipDirectory.canUseDirectory}
+        directoryQuery={relationshipDirectory.query}
+        directoryResults={relationshipDirectory.results}
+        directoryLoading={relationshipDirectory.directoryLoading}
+        relationshipLoading={relationshipDirectory.relationshipLoading}
+        publicProfileLoading={relationshipDirectory.publicProfileLoading}
+        directoryError={relationshipDirectory.directoryError}
+        publicProfileHeadline={relationshipDirectory.publicDraft.headline}
+        publicProfileBiography={relationshipDirectory.publicDraft.biography}
+        relationships={relationshipDirectory.relationships}
         placeCandidates={workspace.placeCandidates}
         onSetReadingMode={(value) => {
           workspace.updateDraftField('readingMode', value);
@@ -365,6 +428,13 @@ export default function App() {
         onSavePerson={workspace.savePerson}
         onLoadSavedPerson={workspace.loadSavedPerson}
         onDeleteSavedPerson={workspace.deleteSavedPerson}
+        onDirectoryQueryChange={relationshipDirectory.setQuery}
+        onSearchDirectory={() => void handleSearchDirectory()}
+        onAddRelationship={(profileId) => void handleAddRelationship(profileId)}
+        onLoadDirectoryProfile={(profile, slot) => handleLoadDirectoryProfile(slot, profile)}
+        onPublishPrimaryProfile={() => void handlePublishPrimaryProfile()}
+        onPublicProfileHeadlineChange={(value) => relationshipDirectory.setPublicDraft((current) => ({ ...current, headline: value }))}
+        onPublicProfileBiographyChange={(value) => relationshipDirectory.setPublicDraft((current) => ({ ...current, biography: value }))}
         onToggleJungian={(value) => void handlePreferenceChange('include_jungian_default', value)}
         onToggleRedBook={(value) => void handlePreferenceChange('include_red_book_prompts_default', value)}
         onNext={workspace.nextStep}
@@ -428,14 +498,19 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   hero: {
-    backgroundColor: palette.surface,
+    backgroundColor: palette.surfaceStrong,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: palette.border,
-    paddingHorizontal: 26,
-    paddingVertical: 30,
-    gap: 10,
+    borderColor: palette.borderStrong,
+    paddingHorizontal: 28,
+    paddingVertical: 32,
+    gap: 12,
     overflow: 'hidden',
+    shadowColor: '#16322E',
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 2,
   },
   heroTopRow: {
     width: '100%',
@@ -452,8 +527,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: palette.border,
-    backgroundColor: palette.background,
+    borderColor: palette.borderStrong,
+    backgroundColor: palette.surface,
     alignSelf: 'flex-end',
   },
   heroActionPressed: {
@@ -482,14 +557,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   title: {
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 36,
+    lineHeight: 42,
     color: palette.ink,
     fontWeight: '700',
   },
   subtitle: {
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 25,
     color: palette.muted,
   },
   heroAuthText: {

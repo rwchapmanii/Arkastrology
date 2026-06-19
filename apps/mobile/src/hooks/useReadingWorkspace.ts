@@ -251,6 +251,11 @@ export function useReadingWorkspace(authState: AuthState) {
     setSaveMessage(`Loaded ${saved.label} into ${slot === 'primary' ? 'Person A' : 'Person B'}.`);
   }
 
+  function loadPersonDraft(person: PersonDraft, slot: PersonSlot, label?: string) {
+    setDraft((current) => ({ ...current, [slot]: person }));
+    setSaveMessage(`Loaded ${label || person.profileLabel || person.name || 'profile'} into ${slot === 'primary' ? 'Person A' : 'Person B'}.`);
+  }
+
   function deleteSavedPerson(id: string) {
     setSavedPeople((current) => current.filter((entry) => entry.id !== id));
     setSaveMessage('Saved person removed.');
@@ -346,6 +351,7 @@ export function useReadingWorkspace(authState: AuthState) {
     useDeviceOffset,
     savePerson,
     loadSavedPerson,
+    loadPersonDraft,
     deleteSavedPerson,
     generateReading,
     resetDraft,

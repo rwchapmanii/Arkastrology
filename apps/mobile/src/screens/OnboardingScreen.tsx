@@ -3,7 +3,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { palette } from '../constants/theme';
 import { MetricChip, SecondaryButton, StepPill, SurfaceCard, Field, ToggleTile, PrimaryButton } from '../components/common';
-import { AppDraft, PersonDraft, PersonSlot, ReadingMode, SavedPerson } from '../types/app';
+import { AppDraft, DirectoryProfile, PersonDraft, PersonSlot, ReadingMode, RelationshipEntry, SavedPerson } from '../types/app';
 
 type PlaceCandidate = {
   normalized_name: string;
@@ -113,6 +113,16 @@ export function OnboardingScreen({
   canAdvance,
   stepLabels,
   savedPeople,
+  directoryEnabled,
+  directoryQuery,
+  directoryResults,
+  directoryLoading,
+  relationshipLoading,
+  publicProfileLoading,
+  directoryError,
+  publicProfileHeadline,
+  publicProfileBiography,
+  relationships,
   onSetReadingMode,
   placeCandidates,
   onPersonChange,
@@ -123,6 +133,13 @@ export function OnboardingScreen({
   onSavePerson,
   onLoadSavedPerson,
   onDeleteSavedPerson,
+  onDirectoryQueryChange,
+  onSearchDirectory,
+  onAddRelationship,
+  onLoadDirectoryProfile,
+  onPublishPrimaryProfile,
+  onPublicProfileHeadlineChange,
+  onPublicProfileBiographyChange,
   onToggleJungian,
   onToggleRedBook,
   onNext,
@@ -137,6 +154,16 @@ export function OnboardingScreen({
   canAdvance: boolean;
   stepLabels: string[];
   savedPeople: SavedPerson[];
+  directoryEnabled: boolean;
+  directoryQuery: string;
+  directoryResults: DirectoryProfile[];
+  directoryLoading: boolean;
+  relationshipLoading: boolean;
+  publicProfileLoading: boolean;
+  directoryError?: string | null;
+  publicProfileHeadline: string;
+  publicProfileBiography: string;
+  relationships: RelationshipEntry[];
   onSetReadingMode: (value: ReadingMode) => void;
   placeCandidates: Record<PersonSlot, PlaceCandidate[]>;
   onPersonChange: (slot: PersonSlot, key: keyof PersonDraft, value: string) => void;
@@ -147,6 +174,13 @@ export function OnboardingScreen({
   onSavePerson: (slot: PersonSlot) => void;
   onLoadSavedPerson: (saved: SavedPerson, slot: PersonSlot) => void;
   onDeleteSavedPerson: (id: string) => void;
+  onDirectoryQueryChange: (value: string) => void;
+  onSearchDirectory: () => void;
+  onAddRelationship: (profileId: string) => void;
+  onLoadDirectoryProfile: (profile: DirectoryProfile, slot: PersonSlot) => void;
+  onPublishPrimaryProfile: () => void;
+  onPublicProfileHeadlineChange: (value: string) => void;
+  onPublicProfileBiographyChange: (value: string) => void;
   onToggleJungian: (value: boolean) => void;
   onToggleRedBook: (value: boolean) => void;
   onNext: () => void;
@@ -197,6 +231,53 @@ export function OnboardingScreen({
                 </View>
               </View>
             ))
+          )}
+        </SurfaceCard>
+
+        <SurfaceCard title="Find people" subtitle="Search current celebrities and Ark members, then add them to your relationships or load them into a reading.">
+          {!directoryEnabled ? (
+            <Text style={styles.mutedText}>Sign in to use the shared people directory and relationship features.</Text>
+          ) : (
+            <>
+              <Field label="Search people" value={directoryQuery} onChangeText={onDirectoryQueryChange} placeholder="Taylor Swift, Zendaya, or a friend on Ark" autoCapitalize="words" />
+              <View style={styles.inlineActions}>
+                <SecondaryButton label={directoryLoading ? 'Searching…' : 'Search directory'} onPress={onSearchDirectory} disabled={directoryLoading} icon={<Feather name="search" size={15} color={palette.ink} />} />
+                <SecondaryButton label={relationshipLoading ? 'Updating…' : `Relationships (${relationships.length})`} onPress={onSearchDirectory} disabled={relationshipLoading} icon={<MaterialCommunityIcons name="account-heart-outline" size={15} color={palette.ink} />} />
+              </View>
+              {directoryError ? <Text style={styles.errorText}>{directoryError}</Text> : null}
+              {directoryResults.length === 0 ? (
+                <Text style={styles.mutedText}>Search to browse celebrity charts or friends who have published a chart profile.</Text>
+              ) : (
+                <View style={styles.directoryStack}>
+                  {directoryResults.map((profile) => (
+                    <View key={profile.profile_id} style={styles.directoryCard}>
+                      <View style={styles.directoryTextWrap}>
+                        <Text style={styles.directoryTitle}>{profile.display_name}</Text>
+                        <Text style={styles.directoryMeta}>{profile.headline || profile.source_label || (profile.kind === 'celebrity' ? 'Celebrity' : 'Ark member')}</Text>
+                        <Text style={styles.directoryDetails}>{profile.profile.birth_date} • {profile.profile.birth_city}, {profile.profile.birth_country}</Text>
+                      </View>
+                      <View style={styles.savedActionsWrap}>
+                        <SecondaryButton label="Load A" onPress={() => onLoadDirectoryProfile(profile, 'primary')} icon={<Ionicons name="person-outline" size={16} color={palette.ink} />} />
+                        {draft.readingMode === 'synastry' ? <SecondaryButton label="Load B" onPress={() => onLoadDirectoryProfile(profile, 'secondary')} icon={<Ionicons name="people-outline" size={16} color={palette.ink} />} /> : null}
+                        <SecondaryButton label={profile.relationship_added ? 'Saved' : 'Add'} onPress={() => onAddRelationship(profile.profile_id)} disabled={profile.relationship_added} icon={<MaterialCommunityIcons name="account-plus-outline" size={16} color={palette.ink} />} />
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </>
+          )}
+        </SurfaceCard>
+
+        <SurfaceCard title="Publish your chart profile" subtitle="Use Person A as your discoverable chart so friends can find you and add you to their relationship list.">
+          {!directoryEnabled ? (
+            <Text style={styles.mutedText}>Sign in to publish a chart profile for friend discovery.</Text>
+          ) : (
+            <>
+              <Field label="Short headline" value={publicProfileHeadline} onChangeText={onPublicProfileHeadlineChange} placeholder="Friend, collaborator, Ark member" autoCapitalize="sentences" />
+              <Field label="Short bio" value={publicProfileBiography} onChangeText={onPublicProfileBiographyChange} placeholder="A brief note people will see before loading your chart." autoCapitalize="sentences" />
+              <PrimaryButton label={publicProfileLoading ? 'Publishing…' : 'Publish Person A as my chart profile'} onPress={onPublishPrimaryProfile} disabled={publicProfileLoading} icon={<Feather name="upload-cloud" size={15} color={palette.white} />} />
+            </>
           )}
         </SurfaceCard>
 
@@ -308,6 +389,13 @@ const styles = StyleSheet.create({
   savedMeta: { fontSize: 13, lineHeight: 19, color: palette.muted },
   savedDate: { fontSize: 12, color: palette.muted },
   savedActionsWrap: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  directoryStack: { gap: 12 },
+  directoryCard: { gap: 12, borderWidth: 1, borderColor: palette.border, backgroundColor: palette.input, borderRadius: 16, padding: 14 },
+  directoryTextWrap: { gap: 4 },
+  directoryTitle: { fontSize: 16, lineHeight: 22, color: palette.ink, fontWeight: '700' },
+  directoryMeta: { fontSize: 13, lineHeight: 18, color: palette.muted },
+  directoryDetails: { fontSize: 13, lineHeight: 18, color: palette.ink },
+  errorText: { fontSize: 13, lineHeight: 18, color: '#8F2D2D' },
   footerActions: { flexDirection: 'row', gap: 10 },
   footerButton: { flex: 1 },
 });

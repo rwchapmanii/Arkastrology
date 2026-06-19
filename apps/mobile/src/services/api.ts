@@ -1,14 +1,17 @@
 import {
   AccountProfileResponse,
   AnyReadingResponse,
+  DirectoryProfileListResponse,
   AuthSessionResponse,
   AuthState,
   GroundedChatResponse,
   GroundedChatTurn,
   PasswordResetConfirmResponse,
   PlaceResolveResponse,
+  PublicChartProfileResponse,
   ReadingHistoryDetailResponse,
   ReadingHistoryListResponse,
+  RelationshipListResponse,
   SessionStatusResponse,
   TokenDeliveryResponse,
   VerificationConfirmResponse,
@@ -199,6 +202,62 @@ export async function updateAccountProfile(
     method: 'PATCH',
     headers: buildHeaders(sessionToken),
     body: JSON.stringify(profile),
+  });
+}
+
+export async function fetchPublicChartProfile(baseUrl: string, sessionToken: string) {
+  return requestJson<PublicChartProfileResponse>(baseUrl, '/v1/account/public-chart', {
+    method: 'GET',
+    headers: buildHeaders(sessionToken, false),
+  });
+}
+
+export async function savePublicChartProfile(
+  baseUrl: string,
+  sessionToken: string,
+  payload: {
+    profile: Record<string, string | number>;
+    headline?: string;
+    biography?: string;
+    is_discoverable?: boolean;
+  },
+) {
+  return requestJson<PublicChartProfileResponse>(baseUrl, '/v1/account/public-chart', {
+    method: 'PUT',
+    headers: buildHeaders(sessionToken),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function searchDirectoryProfiles(baseUrl: string, sessionToken: string, query = '', limit = 20) {
+  const params = new URLSearchParams();
+  if (query.trim()) params.set('query', query.trim());
+  params.set('limit', String(limit));
+  return requestJson<DirectoryProfileListResponse>(baseUrl, `/v1/directory/profiles?${params.toString()}`, {
+    method: 'GET',
+    headers: buildHeaders(sessionToken, false),
+  });
+}
+
+export async function fetchRelationships(baseUrl: string, sessionToken: string) {
+  return requestJson<RelationshipListResponse>(baseUrl, '/v1/account/relationships', {
+    method: 'GET',
+    headers: buildHeaders(sessionToken, false),
+  });
+}
+
+export async function addRelationship(baseUrl: string, sessionToken: string, profileId: string) {
+  return requestJson<RelationshipListResponse>(baseUrl, '/v1/account/relationships', {
+    method: 'POST',
+    headers: buildHeaders(sessionToken),
+    body: JSON.stringify({ profile_id: profileId }),
+  });
+}
+
+export async function removeRelationship(baseUrl: string, sessionToken: string, profileId: string) {
+  return requestJson<RelationshipListResponse>(baseUrl, `/v1/account/relationships/${encodeURIComponent(profileId)}`, {
+    method: 'DELETE',
+    headers: buildHeaders(sessionToken, false),
   });
 }
 

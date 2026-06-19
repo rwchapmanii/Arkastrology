@@ -1,0 +1,162 @@
+[
+  {
+    "id": "celebrity:taylor-swift",
+    "display_name": "Taylor Swift",
+    "headline": "Singer-songwriter",
+    "biography": "Taylor Swift is an American singer-songwriter and global pop star.",
+    "tags": ["celebrity", "music", "pop"],
+    "source_label": "Celebrity directory",
+    "profile": {
+      "name": "Taylor Swift",
+      "birth_date": "1989-12-13",
+      "birth_time": "12:00",
+      "birth_city": "West Reading, Pennsylvania",
+      "birth_country": "United States",
+      "time_precision": "approximate"
+    }
+  },
+  {
+    "id": "celebrity:zendaya",
+    "display_name": "Zendaya",
+    "headline": "Actress and singer",
+    "biography": "Zendaya is an American actress and singer known for film, television, and fashion influence.",
+    "tags": ["celebrity", "film", "television"],
+    "source_label": "Celebrity directory",
+    "profile": {
+      "name": "Zendaya",
+      "birth_date": "1996-09-01",
+      "birth_time": "12:00",
+      "birth_city": "Oakland, California",
+      "birth_country": "United States",
+      "time_precision": "approximate"
+    }
+  },
+  {
+    "id": "celebrity:timothee-chalamet",
+    "display_name": "Timothee Chalamet",
+    "headline": "Actor",
+    "biography": "Timothee Chalamet is an American and French actor known for both independent films and major studio releases.",
+    "tags": ["celebrity", "film", "actor"],
+    "source_label": "Celebrity directory",
+    "profile": {
+      "name": "Timothee Chalamet",
+      "birth_date": "1995-12-27",
+      "birth_time": "12:00",
+      "birth_city": "New York City, New York",
+      "birth_country": "United States",
+      "time_precision": "approximate"
+    }
+  },
+  {
+    "id": "celebrity:sabrina-carpenter",
+    "display_name": "Sabrina Carpenter",
+    "headline": "Singer-songwriter and actress",
+    "biography": "Sabrina Carpenter is an American singer-songwriter and actress with a strong current pop presence.",
+    "tags": ["celebrity", "music", "pop"],
+    "source_label": "Celebrity directory",
+    "profile": {
+      "name": "Sabrina Carpenter",
+      "birth_date": "1999-05-11",
+      "birth_time": "12:00",
+      "birth_city": "Quakertown, Pennsylvania",
+      "birth_country": "United States",
+      "time_precision": "approximate"
+    }
+  },
+  {
+    "id": "celebrity:dua-lipa",
+    "display_name": "Dua Lipa",
+    "headline": "Singer-songwriter",
+    "biography": "Dua Lipa is an English singer-songwriter and one of the defining pop artists of the current decade.",
+    "tags": ["celebrity", "music", "pop"],
+    "source_label": "Celebrity directory",
+    "profile": {
+      "name": "Dua Lipa",
+      "birth_date": "1995-08-22",
+      "birth_time": "12:00",
+      "birth_city": "London, England",
+      "birth_country": "United Kingdom",
+      "time_precision": "approximate"
+    }
+  },
+  {
+    "id": "celebrity:pedro-pascal",
+    "display_name": "Pedro Pascal",
+    "headline": "Actor",
+    "biography": "Pedro Pascal is a Chilean-American actor known for major television and film roles.",
+    "tags": ["celebrity", "film", "television"],
+    "source_label": "Celebrity directory",
+    "profile": {
+      "name": "Pedro Pascal",
+      "birth_date": "1975-04-02",
+      "birth_time": "12:00",
+      "birth_city": "Santiago",
+      "birth_country": "Chile",
+      "time_precision": "approximate"
+    }
+  },
+  {
+    "id": "celebrity:florence-pugh",
+    "display_name": "Florence Pugh",
+    "headline": "Actress",
+    "biography": "Florence Pugh is an English actress known for acclaimed dramatic performances and blockbuster films.",
+    "tags": ["celebrity", "film", "actor"],
+    "source_label": "Celebrity directory",
+    "profile": {
+      "name": "Florence Pugh",
+      "birth_date": "1996-01-03",
+      "birth_time": "12:00",
+      "birth_city": "Oxford, England",
+      "birth_country": "United Kingdom",
+      "time_precision": "approximate"
+    }
+  },
+  {
+    "id": "celebrity:jenna-ortega",
+    "display_name": "Jenna Ortega",
+    "headline": "Actress",
+    "biography": "Jenna Ortega is an American actress known for contemporary horror and streaming-era television.",
+    "tags": ["celebrity", "film", "television"],
+    "source_label": "Celebrity directory",
+    "profile": {
+      "name": "Jenna Ortega",
+      "birth_date": "2002-09-27",
+      "birth_time": "12:00",
+      "birth_city": "Rancho Mirage, California",
+      "birth_country": "United States",
+      "time_precision": "approximate"
+    }
+  },
+  {
+    "id": "celebrity:sydney-sweeney",
+    "display_name": "Sydney Sweeney",
+    "headline": "Actress and producer",
+    "biography": "Sydney Sweeney is an American actress and producer known for television drama and recent film work.",
+    "tags": ["celebrity", "film", "television"],
+    "source_label": "Celebrity directory",
+    "profile": {
+      "name": "Sydney Sweeney",
+      "birth_date": "1997-09-12",
+      "birth_time": "12:00",
+      "birth_city": "Spokane, Washington",
+      "birth_country": "United States",
+      "time_precision": "approximate"
+    }
+  },
+  {
+    "id": "celebrity:bad-bunny",
+    "display_name": "Bad Bunny",
+    "headline": "Rapper, singer, and performer",
+    "biography": "Bad Bunny is a Puerto Rican rapper, singer, and performer with global crossover influence.",
+    "tags": ["celebrity", "music", "latin"],
+    "source_label": "Celebrity directory",
+    "profile": {
+      "name": "Bad Bunny",
+      "birth_date": "1994-03-10",
+      "birth_time": "12:00",
+      "birth_city": "Bayamon, Puerto Rico",
+      "birth_country": "Puerto Rico",
+      "time_precision": "approximate"
+    }
+  }
+]

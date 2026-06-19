@@ -30,6 +30,13 @@ from app.models.chart import (
     SynastryReadingResponse,
 )
 from app.models.history import ReadingHistoryDetailResponse, ReadingHistoryListResponse, ReadingHistoryUpdateRequest
+from app.models.social import (
+    AddRelationshipRequest,
+    DirectoryProfileListResponse,
+    PublicChartProfileRequest,
+    PublicChartProfileResponse,
+    RelationshipListResponse,
+)
 from app.services.auth_service import AuthService
 from app.services.citation_service import CitationService
 from app.services.content_loader import load_ontology
@@ -37,6 +44,7 @@ from app.services.natal_service import NatalReadingService
 from app.services.place_service import PlaceResolutionService
 from app.services.rate_limit_service import RateLimitService
 from app.services.reading_history_service import ReadingHistoryService
+from app.services.relationship_service import RelationshipService
 from app.services.source_chat_service import SourceChatService
 from app.services.synastry_service import SynastryReadingService
 
@@ -224,6 +232,55 @@ def update_account_reading(
 ) -> ReadingHistoryDetailResponse:
     user_id = AuthService.get_user_id_for_session(authorization)
     return ReadingHistoryService.update_reading(user_id, reading_id, request)
+
+
+@router.get("/v1/account/public-chart", response_model=PublicChartProfileResponse)
+def get_public_chart(authorization: Annotated[Optional[str], Header()] = None) -> PublicChartProfileResponse:
+    user_id = AuthService.get_user_id_for_session(authorization)
+    return RelationshipService.get_public_chart_profile(user_id)
+
+
+@router.put("/v1/account/public-chart", response_model=PublicChartProfileResponse)
+def set_public_chart(
+    request: PublicChartProfileRequest,
+    authorization: Annotated[Optional[str], Header()] = None,
+) -> PublicChartProfileResponse:
+    user_id = AuthService.get_user_id_for_session(authorization)
+    return RelationshipService.set_public_chart_profile(user_id, request)
+
+
+@router.get("/v1/account/relationships", response_model=RelationshipListResponse)
+def list_relationships(authorization: Annotated[Optional[str], Header()] = None) -> RelationshipListResponse:
+    user_id = AuthService.get_user_id_for_session(authorization)
+    return RelationshipService.list_relationships(user_id)
+
+
+@router.post("/v1/account/relationships", response_model=RelationshipListResponse)
+def add_relationship(
+    request: AddRelationshipRequest,
+    authorization: Annotated[Optional[str], Header()] = None,
+) -> RelationshipListResponse:
+    user_id = AuthService.get_user_id_for_session(authorization)
+    return RelationshipService.add_relationship(user_id, request)
+
+
+@router.delete("/v1/account/relationships/{profile_id}", response_model=RelationshipListResponse)
+def remove_relationship(
+    profile_id: str,
+    authorization: Annotated[Optional[str], Header()] = None,
+) -> RelationshipListResponse:
+    user_id = AuthService.get_user_id_for_session(authorization)
+    return RelationshipService.remove_relationship(user_id, profile_id)
+
+
+@router.get("/v1/directory/profiles", response_model=DirectoryProfileListResponse)
+def directory_profiles(
+    query: str = Query(default="", max_length=120),
+    limit: int = Query(default=20, ge=1, le=50),
+    authorization: Annotated[Optional[str], Header()] = None,
+) -> DirectoryProfileListResponse:
+    user_id = AuthService.get_user_id_for_session(authorization)
+    return RelationshipService.search_directory(user_id=user_id, query=query, limit=limit)
 
 
 @router.post("/v1/places/resolve", response_model=PlaceResolveResponse)

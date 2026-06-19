@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { palette } from '../constants/theme';
 import { Field, MetricChip, PrimaryButton, SecondaryButton, SurfaceCard, ToggleTile } from '../components/common';
-import { AuthState, SavedPerson } from '../types/app';
+import { AuthState, RelationshipEntry, SavedPerson } from '../types/app';
 
 type ProfileDraft = {
   displayName: string;
@@ -14,6 +14,8 @@ type ProfileDraft = {
 export function AccountScreen({
   authState,
   savedPeople,
+  relationships,
+  relationshipsLoading,
   includeJungian,
   includeRedBookPrompts,
   profileDraft,
@@ -24,12 +26,16 @@ export function AccountScreen({
   onToggleJungian,
   onToggleRedBook,
   onOpenHistory,
+  onRefreshRelationships,
+  onRemoveRelationship,
   onRequestVerification,
   onBack,
   onSignOut,
 }: {
   authState: AuthState;
   savedPeople: SavedPerson[];
+  relationships: RelationshipEntry[];
+  relationshipsLoading: boolean;
   includeJungian: boolean;
   includeRedBookPrompts: boolean;
   profileDraft: ProfileDraft;
@@ -40,6 +46,8 @@ export function AccountScreen({
   onToggleJungian: (value: boolean) => void;
   onToggleRedBook: (value: boolean) => void;
   onOpenHistory: () => void;
+  onRefreshRelationships: () => void;
+  onRemoveRelationship: (profileId: string) => void;
   onRequestVerification: () => void;
   onBack: () => void;
   onSignOut: () => void;
@@ -54,6 +62,7 @@ export function AccountScreen({
           <MetricChip label="Email" value={authState.email || 'Guest session'} icon={<Feather name="mail" size={14} color={palette.muted} />} />
           <MetricChip label="Verified" value={authState.emailVerified ? 'Yes' : 'No'} icon={<Feather name="shield" size={14} color={palette.muted} />} />
           <MetricChip label="Saved people" value={String(savedPeople.length)} icon={<Ionicons name="people-outline" size={14} color={palette.muted} />} />
+          <MetricChip label="Relationships" value={String(relationships.length)} icon={<MaterialCommunityIcons name="account-heart-outline" size={14} color={palette.muted} />} />
           <MetricChip label="Plan" value={planLabel} icon={<MaterialCommunityIcons name="star-four-points-outline" size={14} color={palette.muted} />} />
         </View>
       </SurfaceCard>
@@ -87,6 +96,25 @@ export function AccountScreen({
         ) : null}
       </SurfaceCard>
 
+      <SurfaceCard title="Relationships" subtitle="These are the people you have saved from the directory for future relationship readings.">
+        {relationships.length === 0 ? (
+          <Text style={styles.body}>No relationships saved yet. Find people from the onboarding directory and add them here.</Text>
+        ) : (
+          <View style={styles.stack}>
+            {relationships.map((entry) => (
+              <View key={entry.relationship_id} style={styles.relationshipCard}>
+                <View style={styles.relationshipText}>
+                  <Text style={styles.relationshipName}>{entry.display_name}</Text>
+                  <Text style={styles.relationshipMeta}>{entry.headline || entry.source_label || entry.kind}</Text>
+                </View>
+                <SecondaryButton label="Remove" onPress={() => onRemoveRelationship(entry.profile_id)} icon={<Feather name="x" size={15} color={palette.ink} />} />
+              </View>
+            ))}
+          </View>
+        )}
+        <SecondaryButton label={relationshipsLoading ? 'Refreshing…' : 'Refresh relationships'} onPress={onRefreshRelationships} disabled={relationshipsLoading} icon={<Feather name="refresh-cw" size={15} color={palette.ink} />} />
+      </SurfaceCard>
+
       <View style={styles.row}>
         <View style={styles.flex}><SecondaryButton label="Back" onPress={onBack} icon={<Feather name="arrow-left" size={15} color={palette.ink} />} /></View>
         <View style={styles.flex}><PrimaryButton label={authState.mode === 'authenticated' ? 'Sign out' : 'Exit guest mode'} onPress={onSignOut} icon={<Feather name="log-out" size={15} color={palette.white} />} /></View>
@@ -101,4 +129,14 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 10 },
   flex: { flex: 1 },
   stack: { gap: 12 },
+  relationshipCard: {
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: 16,
+    padding: 14,
+    gap: 10,
+  },
+  relationshipText: { gap: 4 },
+  relationshipName: { fontSize: 16, lineHeight: 22, color: palette.ink, fontWeight: '700' },
+  relationshipMeta: { fontSize: 13, lineHeight: 18, color: palette.muted },
 });
