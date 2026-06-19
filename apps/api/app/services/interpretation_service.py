@@ -313,6 +313,8 @@ class NatalInterpretationService:
         score: int,
         caveat: Optional[str] = None,
         source_layer: str = "traditional_core",
+        polarity: Optional[str] = None,
+        chart_context: Optional[str] = None,
     ) -> EvidenceItem:
         combined = f"{observation} {rule}".lower()
         resolved_source_layer = source_layer
@@ -321,6 +323,26 @@ class NatalInterpretationService:
                 resolved_source_layer = "traditional_timing"
             elif any(token in combined for token in ["transit", "current sky", "moving sky"]):
                 resolved_source_layer = "current_sky"
+        resolved_chart_context = chart_context
+        if resolved_chart_context is None:
+            if "solar return" in combined:
+                resolved_chart_context = "solar_return"
+            elif "annual profection" in combined or "profection year" in combined or "year lord" in combined:
+                resolved_chart_context = "annual_profection"
+            elif "fortune" in combined or "spirit" in combined:
+                resolved_chart_context = "fortune_spirit"
+            elif "transit" in combined or "current sky" in combined or "moving sky" in combined:
+                resolved_chart_context = "transit"
+            else:
+                resolved_chart_context = "natal"
+        resolved_polarity = polarity
+        if resolved_polarity is None:
+            if score > 0:
+                resolved_polarity = "support"
+            elif score < 0:
+                resolved_polarity = "strain"
+            else:
+                resolved_polarity = "activation"
         return EvidenceItem(
             observation=observation,
             rule=rule,
@@ -328,6 +350,9 @@ class NatalInterpretationService:
             interpretation=interpretation,
             confidence_effect=cls._confidence_effect_from_score(score),
             caveat=caveat,
+            polarity=resolved_polarity,
+            weight=max(abs(score), 1),
+            chart_context=resolved_chart_context,
         )
 
     @classmethod
@@ -939,17 +964,19 @@ class NatalInterpretationService:
             doctrine_bits.append(
                 "Fortune speaks to circumstance and embodiment, while Spirit speaks to chosen direction and intention."
             )
-        evidence_items = [
-            cls._evidence_item(
-                observation=(
-                    f"The profection activates {year_map.activated_house_title or 'the live house'}"
-                    + (f" from {year_map.profection_window}." if year_map.profection_window else ".")
-                ),
-                rule="Annual profection sets the primary house and year lord for the current cycle.",
-                interpretation="This identifies the main life area that keeps repeating this year.",
-                score=1,
-            )
-        ]
+            evidence_items = [
+                cls._evidence_item(
+                    observation=(
+                        f"The profection activates {year_map.activated_house_title or 'the live house'}"
+                        + (f" from {year_map.profection_window}." if year_map.profection_window else ".")
+                    ),
+                    rule="Annual profection sets the primary house and year lord for the current cycle.",
+                    interpretation="This identifies the main life area that keeps repeating this year.",
+                    score=1,
+                    polarity="activation",
+                    chart_context="annual_profection",
+                )
+            ]
         if year_map.solar_return_ascendant:
             evidence_items.append(
                 cls._evidence_item(
@@ -959,6 +986,8 @@ class NatalInterpretationService:
                     rule="Solar return work concentrates the profection year into a more specific atmosphere.",
                     interpretation="This shows how the year's storyline becomes concrete in practice.",
                     score=1,
+                    polarity="activation",
+                    chart_context="solar_return",
                 )
             )
         if year_map.fortune_emphasis and year_map.spirit_emphasis:
@@ -973,6 +1002,8 @@ class NatalInterpretationService:
                         "The two lots divide the story between circumstance and intention."
                     ),
                     score=alignment_score,
+                    polarity="support" if alignment_score > 0 else "mixed",
+                    chart_context="fortune_spirit",
                 )
             )
         return InterpretationBlock(
@@ -1099,18 +1130,24 @@ class NatalInterpretationService:
                     rule="Fortune shows material, bodily, and circumstantial emphasis in traditional doctrine.",
                     interpretation="This helps locate where circumstances tend to gather and press on the life.",
                     score=1,
+                    polarity="activation",
+                    chart_context="fortune_spirit",
                 ),
                 cls._evidence_item(
                     observation=spirit_text or "Spirit marks intentional or purposive emphasis.",
                     rule="Spirit shows intention, action, and purposive direction in traditional doctrine.",
                     interpretation="This helps locate where chosen effort and agency are most likely to gather.",
                     score=1,
+                    polarity="activation",
+                    chart_context="fortune_spirit",
                 ),
                 cls._evidence_item(
                     observation=alignment_sentence,
                     rule="The two lots can reinforce one another or split the story between circumstance and intention.",
                     interpretation="The reading should distinguish what is happening around the person from what the person is trying to initiate.",
                     score=1 if alignment == "aligned" else -1,
+                    polarity="support" if alignment == "aligned" else "mixed",
+                    chart_context="fortune_spirit",
                 ),
             ],
             plain_meaning=plain_meaning,

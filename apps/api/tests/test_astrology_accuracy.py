@@ -221,6 +221,9 @@ class AstrologyAccuracyTests(unittest.TestCase):
         self.assertEqual(response.prediction_cards[0].title, "Current year map")
         self.assertEqual(response.prediction_cards[1].title, "How Fortune and Spirit divide the story")
         self.assertEqual(response.technical_summary.year_map.fortune_spirit_alignment, "split")
+        year_map_block = next(block for block in response.interpretation_blocks if block.block_type == "year_map")
+        self.assertIn("natal", year_map_block.summary.lower())
+        self.assertIn("solar return", year_map_block.summary.lower())
 
     def test_natal_response_includes_daily_horoscope(self):
         profile = self.build_profile()
@@ -245,6 +248,17 @@ class AstrologyAccuracyTests(unittest.TestCase):
         self.assertGreaterEqual(len(response.daily_horoscope.action_checklist), 3)
         self.assertTrue(any("orb" in line.lower() for line in response.daily_horoscope.active_transits))
         self.assertTrue(any(contact.transit_body in response.daily_horoscope.headline for contact in response.technical_summary.transit_aspects[:1]))
+
+    def test_topic_judgment_evidence_exposes_reasoning_metadata(self):
+        profile = self.build_profile()
+        response = NatalReadingService.build_response(NatalReadingRequest(profile=profile))
+
+        first_topic = response.technical_summary.topic_judgments[0]
+        first_evidence = first_topic.evidence_items[0]
+        self.assertIn(first_evidence.polarity, {"support", "strain", "activation", "mixed"})
+        self.assertIsNotNone(first_evidence.weight)
+        self.assertGreaterEqual(first_evidence.weight, 1)
+        self.assertIn(first_evidence.chart_context, {"natal", "annual_profection", "solar_return", "fortune_spirit", "transit"})
 
     def test_synastry_unknown_time_uses_planetary_fallback(self):
         primary = self.build_profile(name="Person A")

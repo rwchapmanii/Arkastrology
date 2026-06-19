@@ -71,6 +71,8 @@ function sanitizeBlock(block: InterpretationBlock): InterpretationBlock {
       rule: cleanString(item.rule) || item.rule,
       interpretation: cleanString(item.interpretation) || item.interpretation,
       caveat: cleanString(item.caveat),
+      polarity: cleanString(item.polarity),
+      chart_context: cleanString(item.chart_context),
     })),
   };
 }

@@ -52,6 +52,9 @@ export type EvidenceItem = {
   interpretation: string;
   confidence_effect: string;
   caveat?: string | null;
+  polarity?: string | null;
+  weight?: number | null;
+  chart_context?: string | null;
 };
 
 export type InterpretationBlock = {

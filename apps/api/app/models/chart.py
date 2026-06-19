@@ -204,6 +204,9 @@ class EvidenceItem(BaseModel):
     interpretation: str
     confidence_effect: str
     caveat: Optional[str] = None
+    polarity: Optional[str] = None
+    weight: Optional[int] = None
+    chart_context: Optional[str] = None
 
 
 class TopicJudgmentRecord(BaseModel):
