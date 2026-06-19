@@ -119,6 +119,7 @@ function sortedTopics(result: AnyReadingResponse) {
 function confidenceExplainer(topic?: TopicJudgmentRecord | null) {
   if (!topic) return null;
   if (topic.confidence === 'high') return 'High confidence means several traditional factors point in the same direction.';
+  if (topic.confidence === 'medium' && topic.classification === 'emphasized') return 'Medium confidence here means the topic is clearly activated, but activation is not the same thing as pure support or pure strain.';
   if (topic.confidence === 'medium' && topic.classification === 'mixed') return 'Medium confidence here means the chart shows both support and friction, and several factors repeat that mixed picture.';
   if (topic.confidence === 'medium') return 'Medium confidence means several factors point this way, but the testimony is not unanimous.';
   return 'Low confidence means the chart offers a clue, but the testimony is still thin or divided.';
@@ -126,6 +127,9 @@ function confidenceExplainer(topic?: TopicJudgmentRecord | null) {
 
 function topicSummary(topic?: TopicJudgmentRecord | null) {
   if (!topic) return null;
+  if (topic.classification === 'emphasized') {
+    return `${topic.title} is highly activated right now. The chart is drawing repeated attention here, but activation alone is not the same thing as damage or ease.`;
+  }
   if (topic.classification === 'supportive') {
     return `${topic.title} is the most supported area right now. The chart gives repeated help here rather than leaving the topic to stand alone.`;
   }
@@ -156,15 +160,15 @@ function buildOpeningSummary(result: AnyReadingResponse, strongest?: TopicJudgme
   const paragraphs = [
     `The year keeps drawing attention to ${topicText}. The emphasis is less about isolated events and more about the themes that keep repeating until they are understood and handled consciously.`,
     yearMap.lord_of_year
-      ? `${yearMap.lord_of_year} carries the year from ${formatHouseRef(yearMap.lord_of_year_house)}, so that part of life becomes the place where the annual storyline is most likely to become visible, manageable, or meaningful.`
+      ? `Natal ${yearMap.lord_of_year} carries the year from the natal ${formatHouseRef(yearMap.lord_of_year_house).toLowerCase()}, so that part of life becomes the place where the annual storyline is most likely to become visible, manageable, or meaningful.`
       : null,
     yearMap.fortune_spirit_alignment === 'split'
-      ? 'Fortune and Spirit are split, which means circumstances and chosen direction may not be telling the same story. What life demands materially may differ from what you most want to pursue intentionally.'
+      ? 'Fortune and Spirit are split across a real axis in the chart, which means circumstances and chosen direction may not be telling the same story. What life demands materially may differ from what you most want to pursue intentionally, especially across the public/private axis.'
       : yearMap.fortune_spirit_alignment === 'aligned'
         ? 'Fortune and Spirit are aligned, so circumstances and chosen direction are reinforcing each other more than usual.'
         : null,
     strongest && strained
-      ? `The chart looks most supportive around ${strongest.title.toLowerCase()} and most pressured around ${strained.title.toLowerCase()}, so the year is not flat. It has clear areas of help and clear areas asking for care.`
+      ? `The chart looks most supportive around ${strongest.title.toLowerCase()} and most pressured around ${strained.title.toLowerCase()}, so the year is not flat. It has clear areas of help, clear areas asking for care, and some areas that are simply louder rather than purely positive or negative.`
       : null,
   ].filter((value): value is string => Boolean(value));
 

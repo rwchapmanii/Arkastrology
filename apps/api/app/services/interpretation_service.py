@@ -252,16 +252,19 @@ class NatalInterpretationService:
         return f"{cls._title_from_house(house_meta, cls._house_id_from_number(house_number))} covers {topics}"
 
     @classmethod
-    def _topic_score_bucket(cls, score: int) -> str:
-        if score >= 6:
+    def _topic_score_bucket(cls, score: int, activation_score: int, support_score: int, strain_score: int) -> str:
+        if support_score >= strain_score + 2:
             return "supportive"
-        if score <= -4:
+        if strain_score >= support_score + 2 and strain_score >= 3:
             return "difficult"
+        if activation_score >= 3 and support_score + strain_score <= 3:
+            return "emphasized"
         return "mixed"
 
     @staticmethod
-    def _confidence_label(evidence_count: int, score: int) -> str:
-        if evidence_count >= 4 and abs(score) >= 4:
+    def _confidence_label(evidence_count: int, activation_score: int, support_score: int, strain_score: int) -> str:
+        contradiction = support_score > 0 and strain_score > 0
+        if evidence_count >= 4 and max(activation_score, support_score, strain_score) >= 3 and not contradiction:
             return "high"
         if evidence_count >= 2:
             return "medium"
@@ -282,6 +285,8 @@ class NatalInterpretationService:
         if label == "medium":
             if classification == "mixed":
                 return "Medium confidence here means the chart shows both support and friction, and several factors repeat that mixed picture."
+            if classification == "emphasized":
+                return "Medium confidence here means the topic is clearly activated, but activation is not the same thing as pure help or pure strain."
             return "Medium confidence means several factors point this way, but the testimony is not unanimous."
         if label == "low":
             return "Low confidence means the chart offers a clue, but the testimony is still thin or divided."
@@ -436,6 +441,9 @@ class NatalInterpretationService:
     def _topic_judgment_data(cls, chart_data: NatalTechnicalChart, ontology: Dict, config: Dict) -> TopicJudgmentRecord:
         houses = cls._house_lookup(ontology)
         score = 0
+        activation_score = 0
+        support_score = 0
+        strain_score = 0
         evidence_items: List[EvidenceItem] = []
         topic_citations = {
             "tetrabiblos_house_topic",
@@ -462,6 +470,7 @@ class NatalInterpretationService:
             occupants = [planet for planet in chart_data.planets if planet.house == cls._house_id_from_number(house_number)]
 
             if ruler:
+                activation_score += 1
                 if ruler.traditional_strength == "strong":
                     ruler_score = 2
                 elif ruler.traditional_strength == "weak":
@@ -470,6 +479,10 @@ class NatalInterpretationService:
                 else:
                     ruler_score = 1
                 score += ruler_score
+                if ruler_score > 0:
+                    support_score += ruler_score
+                elif ruler_score < 0:
+                    strain_score += abs(ruler_score)
                 evidence_items.append(
                     cls._evidence_item(
                         observation=(
@@ -485,12 +498,17 @@ class NatalInterpretationService:
                 )
                 condition_score, condition_evidence = cls._condition_modifier(ruler)
                 score += condition_score
+                if condition_score > 0:
+                    support_score += condition_score
+                elif condition_score < 0:
+                    strain_score += abs(condition_score)
                 if condition_evidence:
                     topic_citations.add("traditional_visibility_motion")
                     weak_or_hidden_ruler = weak_or_hidden_ruler or condition_score < 0
                     evidence_items.extend(condition_evidence)
                 if house_sign and cls._is_aversion(ruler.sign, house_sign):
                     score -= 2
+                    strain_score += 2
                     weak_or_hidden_ruler = True
                     evidence_items.append(
                         cls._evidence_item(
@@ -514,6 +532,7 @@ class NatalInterpretationService:
                         topic_citations.add("traditional_aversion_witness")
                     if relation_score:
                         score += relation_score
+                        support_score += relation_score
                         evidence_items.append(
                             cls._evidence_item(
                                 observation=(
@@ -527,6 +546,7 @@ class NatalInterpretationService:
                         )
 
             for occupant in occupants[:3]:
+                activation_score += 1
                 if occupant.id in cls.BENEFICS:
                     occupant_score = 1 if occupant.traditional_strength != "weak" else 0
                     if occupant_score > 0:
@@ -541,6 +561,10 @@ class NatalInterpretationService:
                 else:
                     occupant_score = 0
                 score += occupant_score
+                if occupant_score > 0:
+                    support_score += occupant_score
+                elif occupant_score < 0:
+                    strain_score += abs(occupant_score)
                 evidence_items.append(
                     cls._evidence_item(
                         observation=f"{occupant.id} occupies {house_title} with {cls._planet_condition_phrase(occupant)} condition.",
@@ -574,6 +598,8 @@ class NatalInterpretationService:
                 )
                 benefic_score = cls._witness_score(best_benefic[0], best_benefic[1]) + (1 if best_benefic[2] else 0)
                 score += benefic_score
+                if benefic_score > 0:
+                    support_score += benefic_score
                 benefic_support += 1
                 benefic_rescue_present = True
                 topic_citations.add("traditional_overcoming" if best_benefic[2] else "traditional_aversion_witness")
@@ -590,6 +616,7 @@ class NatalInterpretationService:
                 )
             elif ruler and weak_or_hidden_ruler:
                 score -= 1
+                strain_score += 1
                 evidence_items.append(
                     cls._evidence_item(
                         observation=f"No benefic witness directly steadies {house_title}.",
@@ -608,6 +635,8 @@ class NatalInterpretationService:
                 )
                 malefic_score = cls._witness_score(strongest_malefic[0], strongest_malefic[1]) - (1 if strongest_malefic[2] else 0)
                 score += malefic_score
+                if malefic_score < 0:
+                    strain_score += abs(malefic_score)
                 malefic_pressure += 1
                 topic_citations.add("traditional_overcoming" if strongest_malefic[2] else "traditional_aversion_witness")
                 evidence_items.append(
@@ -638,6 +667,10 @@ class NatalInterpretationService:
                     if aspect_score == 0:
                         continue
                     score += aspect_score
+                    if aspect_score > 0:
+                        support_score += aspect_score
+                    elif aspect_score < 0:
+                        strain_score += abs(aspect_score)
                     descriptor = "supports" if aspect_score > 0 else "presses"
                     superior = cls._is_superior_witness(other_planet.sign, ruler.sign)
                     if other_planet.id in cls.BENEFICS and aspect_score > 0:
@@ -665,6 +698,11 @@ class NatalInterpretationService:
             if sect_light:
                 sect_light_score = 1 if sect_light.traditional_strength == "strong" else (-1 if sect_light.traditional_strength == "weak" else 0)
                 score += sect_light_score
+                activation_score += 1
+                if sect_light_score > 0:
+                    support_score += sect_light_score
+                elif sect_light_score < 0:
+                    strain_score += abs(sect_light_score)
                 evidence_items.append(
                     cls._evidence_item(
                         observation=f"The sect light is {sect_light.id}, placed in {sect_light.sign} {cls._house_title_for_id(ontology, sect_light.house)}.",
@@ -680,13 +718,19 @@ class NatalInterpretationService:
             lot_ruler = cls._find_planet(chart_data, lot.ruler)
             lot_score = 0
             if lot_ruler:
+                activation_score += 1
                 if lot_ruler.traditional_strength == "strong":
                     lot_score += 2
                 elif lot_ruler.traditional_strength == "weak":
                     lot_score -= 1
             if lot_house_number in config["house_numbers"]:
                 lot_score += 1
+                activation_score += 1
             score += lot_score
+            if lot_score > 0:
+                support_score += lot_score
+            elif lot_score < 0:
+                strain_score += abs(lot_score)
             evidence_items.append(
                 cls._evidence_item(
                     observation=(
@@ -704,6 +748,12 @@ class NatalInterpretationService:
             helper_score = cls._helper_planet_score(helper)
             score += helper_score
             if helper:
+                activation_score += 1
+            if helper_score > 0:
+                support_score += helper_score
+            elif helper_score < 0:
+                strain_score += abs(helper_score)
+            if helper:
                 evidence_items.append(
                     cls._evidence_item(
                         observation=f"{helper.id} is {cls._planet_condition_phrase(helper)}.",
@@ -715,6 +765,7 @@ class NatalInterpretationService:
 
         if benefic_support >= 2 and weak_or_hidden_ruler:
             score += 1
+            support_score += 1
             evidence_items.append(
                 cls._evidence_item(
                     observation="Multiple benefic testimonies repeat around a strained significator.",
@@ -726,6 +777,7 @@ class NatalInterpretationService:
             topic_citations.add("traditional_maltreatment_bonification")
         if malefic_pressure >= 2 and (weak_or_hidden_ruler or not benefic_rescue_present):
             score -= 2
+            strain_score += 2
             evidence_items.append(
                 cls._evidence_item(
                     observation="Repeated malefic pressure lands on a topic that lacks easy rescue.",
@@ -737,14 +789,19 @@ class NatalInterpretationService:
             )
             topic_citations.add("traditional_maltreatment_bonification")
 
-        classification = cls._topic_score_bucket(score)
-        confidence = cls._confidence_label(len(evidence_items), score)
+        classification = cls._topic_score_bucket(score, activation_score, support_score, strain_score)
+        if classification == "difficult" and support_score >= strain_score:
+            classification = "mixed"
+        confidence = cls._confidence_label(len(evidence_items), activation_score, support_score, strain_score)
         return TopicJudgmentRecord(
             key=config["key"],
             title=config["title"],
             score=score,
             classification=classification,
             confidence=confidence,
+            activation_score=activation_score,
+            support_score=support_score,
+            strain_score=strain_score,
             relevant_houses=list(config["house_numbers"]),
             relevant_lot=config.get("lot"),
             evidence_items=evidence_items,
@@ -765,10 +822,12 @@ class NatalInterpretationService:
         fortune_house_meta = cls._house_meta(ontology, cls._house_number(context.fortune.house)) if context.fortune.house else {}
         spirit_house_meta = cls._house_meta(ontology, cls._house_number(context.spirit.house)) if context.spirit.house else {}
         fortune_text = (
-            f"Fortune emphasizes {cls._topic_phrase(fortune_house_meta.get('classical_topics', []) or fortune_house_meta.get('modern_topics', []), 3)} through {fortune_house_title}."
+            f"Fortune in {fortune_house_title} points circumstances toward "
+            f"{cls._topic_phrase(fortune_house_meta.get('classical_topics', []) or fortune_house_meta.get('modern_topics', []), 3)}."
         )
         spirit_text = (
-            f"Spirit emphasizes {cls._topic_phrase(spirit_house_meta.get('classical_topics', []) or spirit_house_meta.get('modern_topics', []), 3)} through {spirit_house_title}."
+            f"Spirit in {spirit_house_title} points chosen effort toward "
+            f"{cls._topic_phrase(spirit_house_meta.get('classical_topics', []) or spirit_house_meta.get('modern_topics', []), 3)}."
         )
         if context.fortune.house == context.spirit.house or context.fortune.ruler == context.spirit.ruler:
             return "aligned", fortune_text, spirit_text
@@ -792,7 +851,15 @@ class NatalInterpretationService:
         if annual_profection:
             house_meta = cls._house_meta(ontology, annual_profection.activated_house)
             activated_house_title = cls._title_from_house(house_meta, cls._house_id_from_number(annual_profection.activated_house))
-            activated_topics = (house_meta.get("classical_topics", []) or house_meta.get("modern_topics", []))[:3]
+            activated_topics = (
+                [
+                    "shared resources, obligations, and vulnerability",
+                    "debts, taxes, inheritances, trust, and dependency",
+                    "loss, mortality symbolism, and the fears that come with uncertainty",
+                ]
+                if annual_profection.activated_house == 8 else
+                (house_meta.get("classical_topics", []) or house_meta.get("modern_topics", []))[:3]
+            )
             if annual_profection.starts_at and annual_profection.ends_at:
                 profection_window = f"{annual_profection.starts_at[:10]} to {annual_profection.ends_at[:10]}"
             lord_of_year = cls._find_planet(chart_data, annual_profection.lord_of_year)
@@ -848,16 +915,16 @@ class NatalInterpretationService:
             )
         if year_map.lord_of_year:
             summary_bits.append(
-                f"{year_map.lord_of_year} carries the year from {cls._house_title_for_id(ontology, year_map.lord_of_year_house)}, which shows where the yearly theme is most likely to become concrete."
+                f"Natal {year_map.lord_of_year} carries the year from the natal {cls._house_title_for_id(ontology, year_map.lord_of_year_house).lower()}, which shows where the yearly theme is most likely to become concrete."
             )
         if year_map.solar_return_ascendant:
             summary_bits.append(
-                f"The solar return rises in {year_map.solar_return_ascendant}, adding a yearly atmosphere around {cls._house_title_for_id(ontology, year_map.solar_return_sun_house)}."
+                f"The solar return rises in {year_map.solar_return_ascendant}, and the return Sun falls in the solar-return {cls._house_title_for_id(ontology, year_map.solar_return_sun_house).lower()}."
             )
         if year_map.fortune_spirit_alignment == "aligned":
             summary_bits.append("Fortune and Spirit are aligned, so circumstance and intention are pointing in a similar direction.")
         elif year_map.fortune_spirit_alignment == "split":
-            summary_bits.append("Fortune and Spirit are split, so what life is demanding and what you most want to pursue may not be identical.")
+            summary_bits.append("Fortune and Spirit are split across a real axis, so what life is demanding and what you most want to pursue may need conscious coordination rather than being assumed to match.")
         plain_meaning = " ".join(summary_bits)
         doctrine_bits = []
         if year_map.activated_house_title:

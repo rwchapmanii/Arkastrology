@@ -235,6 +235,9 @@ export type TopicJudgmentRecord = {
   score: number;
   classification: string;
   confidence: string;
+  activation_score?: number;
+  support_score?: number;
+  strain_score?: number;
   relevant_houses: number[];
   relevant_lot?: string | null;
   evidence_items: EvidenceItem[];

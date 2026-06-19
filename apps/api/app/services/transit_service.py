@@ -701,15 +701,15 @@ class TransitForecastService:
         if year_map.lord_of_year:
             lord_bits.append(f"the lord of the year is {year_map.lord_of_year}")
         if year_map.lord_of_year_house:
-            lord_bits.append(f"it is acting from {year_map.lord_of_year_house.replace('House', 'House ')}")
+            lord_bits.append(f"natal {year_map.lord_of_year} is acting from the natal {year_map.lord_of_year_house.replace('House', 'House ')}")
         if year_map.lord_of_year_condition:
             lord_bits.append(f"its condition is {year_map.lord_of_year_condition.replace('_', ' ')}")
         lord_line = f" In practical terms, {'; '.join(lord_bits)}." if lord_bits else ""
         fortune_line = ""
         if year_map.fortune_emphasis:
-            fortune_line = f" Fortune emphasizes {year_map.fortune_emphasis.lower()}."
+            fortune_line = f" {year_map.fortune_emphasis}"
         if year_map.spirit_emphasis:
-            fortune_line += f" Spirit emphasizes {year_map.spirit_emphasis.lower()}."
+            fortune_line += f" {year_map.spirit_emphasis}"
         return (
             f"Your annual profection keeps returning you to {activated_topics}. "
             f"That means today's event is not random; it is touching the same yearly storyline from the angle of {house_title.lower()}.{lord_line}{fortune_line}"
@@ -923,15 +923,15 @@ class TransitForecastService:
         transit_timezone = transit_timezone or "local time"
         top_contact = contacts[0] if contacts else None
         second_contact = contacts[1] if len(contacts) > 1 else None
-        strongest_topic = max(topic_judgments, key=lambda item: item.score) if topic_judgments else None
-        strained_topic = min(topic_judgments, key=lambda item: item.score) if topic_judgments else None
+        strongest_topic = max(topic_judgments, key=lambda item: ((item.support_score or 0), item.score)) if topic_judgments else None
+        strained_topic = max(topic_judgments, key=lambda item: ((item.strain_score or 0), -item.score)) if topic_judgments else None
         if (
             strongest_topic
             and strained_topic
             and strongest_topic.key == strained_topic.key
             and len(topic_judgments) > 1
         ):
-            strained_topic = sorted(topic_judgments, key=lambda item: item.score)[1]
+            strained_topic = sorted(topic_judgments, key=lambda item: ((item.strain_score or 0), -item.score), reverse=True)[1]
 
         rites = cls._planet_rite_lookup(ontology)
         thresholds = cls._threshold_lookup(ontology)
@@ -1049,12 +1049,12 @@ class TransitForecastService:
             larger_story = f"{larger_story} {cls._nonfatalistic(fortune_spirit_line)}".strip()
 
         opportunities = [cls._nonfatalistic(item) for item in cls._opportunity_lines(house_number, house_title, top_contact.transit_body, top_contact.natal_body)]
-        if strongest_topic and strongest_topic.score > 0:
+        if strongest_topic and (strongest_topic.support_score or 0) > 0:
             opportunities.append(cls._nonfatalistic(f"Lean on what is already working around {strongest_topic.title.lower()} instead of acting as if every part of life is under equal strain."))
         opportunities = opportunities[:4]
 
         watch_fors = [cls._nonfatalistic(item) for item in cls._watch_for_lines(house_number, top_contact.transit_body, top_contact.type)]
-        if strained_topic and strained_topic.score < 0:
+        if strained_topic and (strained_topic.strain_score or 0) > 0:
             watch_fors.append(cls._nonfatalistic(f"Do not let today's trigger spill into {strained_topic.title.lower()}, where the chart already shows extra pressure."))
         watch_fors = watch_fors[:4]
 

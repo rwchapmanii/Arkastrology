@@ -212,6 +212,9 @@ class TopicJudgmentRecord(BaseModel):
     score: int
     classification: str
     confidence: str
+    activation_score: int = 0
+    support_score: int = 0
+    strain_score: int = 0
     relevant_houses: List[int] = Field(default_factory=list)
     relevant_lot: Optional[str] = None
     evidence_items: List[EvidenceItem] = Field(default_factory=list)
