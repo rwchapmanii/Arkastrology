@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabPillActive: { backgroundColor: palette.accent },
+  tabPillActive: { backgroundColor: palette.action },
   tabText: { fontSize: 13, lineHeight: 17, fontWeight: '700', color: palette.muted },
   tabTextActive: { color: palette.white },
   termHint: { fontSize: 12, lineHeight: 18, color: palette.muted, fontWeight: '600' },

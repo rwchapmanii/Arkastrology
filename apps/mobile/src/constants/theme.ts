@@ -5,6 +5,7 @@ export const palette = {
   ink: '#16322E',
   muted: '#5D6A64',
   accent: '#16322E',
+  action: '#000000',
   accentSoft: '#E5F0EA',
   input: '#FFF9F1',
   border: '#D8CFC0',

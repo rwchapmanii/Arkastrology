@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 18,
   },
-  modePillActive: { backgroundColor: palette.accent, borderColor: palette.accent },
+  modePillActive: { backgroundColor: palette.action, borderColor: palette.action },
   modePillPressed: { opacity: 0.92, transform: [{ scale: 0.985 }] },
   modePillInner: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   modePillLabel: { fontSize: 15, lineHeight: 19, fontWeight: '700', color: palette.ink },

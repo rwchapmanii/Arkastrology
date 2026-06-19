@@ -130,11 +130,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   togglePillActive: {
-    backgroundColor: palette.accent,
+    backgroundColor: palette.action,
   },
   toggleText: { fontSize: 13, lineHeight: 17, fontWeight: '700', color: palette.muted },
   toggleTextActive: { color: palette.white },
   resetActions: { gap: 10 },
-  resetLink: { fontSize: 13, lineHeight: 18, color: palette.accent, fontWeight: '700', textAlign: 'center' },
+  resetLink: { fontSize: 13, lineHeight: 18, color: palette.action, fontWeight: '700', textAlign: 'center' },
   caption: { fontSize: 13, lineHeight: 20, color: palette.muted },
 });

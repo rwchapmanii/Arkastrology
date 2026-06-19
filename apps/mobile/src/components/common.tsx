@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 9,
   },
-  stepPillActive: { backgroundColor: palette.accent, borderColor: palette.accent },
+  stepPillActive: { backgroundColor: palette.action, borderColor: palette.action },
   stepPillText: { fontSize: 12, color: palette.muted, fontWeight: '700' },
   stepPillTextActive: { color: palette.white },
   metricChip: {
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   metricValue: { fontSize: 15, lineHeight: 20, color: palette.ink, fontWeight: '600' },
   buttonContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   primaryButton: {
-    backgroundColor: palette.accent,
+    backgroundColor: palette.action,
     borderRadius: radii.button,
     minHeight: 52,
     paddingHorizontal: 20,
