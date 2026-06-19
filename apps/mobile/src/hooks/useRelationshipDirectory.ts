@@ -45,6 +45,7 @@ function buildPersonPayload(person: PersonDraft) {
 export function useRelationshipDirectory(authState: AuthState) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<DirectoryProfile[]>([]);
+  const [directoryExpanded, setDirectoryExpanded] = useState(false);
   const [relationships, setRelationships] = useState<RelationshipEntry[]>([]);
   const [publicDraft, setPublicDraft] = useState<PublicDraft>({ headline: '', biography: '', isDiscoverable: true });
   const [directoryLoading, setDirectoryLoading] = useState(false);
@@ -97,6 +98,7 @@ export function useRelationshipDirectory(authState: AuthState) {
     try {
       const response = await searchDirectoryProfiles(apiBaseUrl || authState.apiBaseUrl || '', authState.token, nextQuery ?? query, 24);
       setResults(response.items);
+      setDirectoryExpanded(true);
       return response.items;
     } catch (err) {
       setDirectoryError(err instanceof Error ? err.message : 'Could not search the directory.');
@@ -173,6 +175,7 @@ export function useRelationshipDirectory(authState: AuthState) {
   useEffect(() => {
     if (!canUseDirectory) {
       setResults([]);
+      setDirectoryExpanded(false);
       setRelationships([]);
       setPublicProfileId(null);
       return;
@@ -180,7 +183,6 @@ export function useRelationshipDirectory(authState: AuthState) {
     void Promise.all([
       refreshRelationships(authState.apiBaseUrl),
       refreshPublicProfile(authState.apiBaseUrl),
-      searchDirectory(authState.apiBaseUrl, ''),
     ]);
   }, [canUseDirectory, authState.apiBaseUrl, authState.token]);
 
@@ -188,6 +190,8 @@ export function useRelationshipDirectory(authState: AuthState) {
     query,
     setQuery,
     results,
+    directoryExpanded,
+    setDirectoryExpanded,
     relationships,
     publicDraft,
     publicProfileId,

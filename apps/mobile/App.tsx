@@ -167,6 +167,22 @@ export default function App() {
     }
   }
 
+  async function handleToggleDirectory() {
+    if (relationshipDirectory.directoryExpanded) {
+      relationshipDirectory.setDirectoryExpanded(false);
+      workspace.setSaveMessage(null);
+      workspace.setError(null);
+      return;
+    }
+    try {
+      await relationshipDirectory.searchDirectory(workspace.draft.apiBaseUrl, relationshipDirectory.query);
+      workspace.setSaveMessage('Directory opened.');
+      workspace.setError(null);
+    } catch (err) {
+      workspace.setError(err instanceof Error ? err.message : 'Could not open directory.');
+    }
+  }
+
   async function handleAddRelationship(profileId: string) {
     try {
       await relationshipDirectory.addRelationshipEntry(profileId, workspace.draft.apiBaseUrl);
@@ -408,6 +424,7 @@ export default function App() {
         directoryEnabled={relationshipDirectory.canUseDirectory}
         directoryQuery={relationshipDirectory.query}
         directoryResults={relationshipDirectory.results}
+        directoryExpanded={relationshipDirectory.directoryExpanded}
         directoryLoading={relationshipDirectory.directoryLoading}
         relationshipLoading={relationshipDirectory.relationshipLoading}
         publicProfileLoading={relationshipDirectory.publicProfileLoading}
@@ -430,6 +447,7 @@ export default function App() {
         onDeleteSavedPerson={workspace.deleteSavedPerson}
         onDirectoryQueryChange={relationshipDirectory.setQuery}
         onSearchDirectory={() => void handleSearchDirectory()}
+        onToggleDirectory={() => void handleToggleDirectory()}
         onAddRelationship={(profileId) => void handleAddRelationship(profileId)}
         onLoadDirectoryProfile={(profile, slot) => handleLoadDirectoryProfile(slot, profile)}
         onPublishPrimaryProfile={() => void handlePublishPrimaryProfile()}

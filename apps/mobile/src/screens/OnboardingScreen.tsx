@@ -116,6 +116,7 @@ export function OnboardingScreen({
   directoryEnabled,
   directoryQuery,
   directoryResults,
+  directoryExpanded,
   directoryLoading,
   relationshipLoading,
   publicProfileLoading,
@@ -135,6 +136,7 @@ export function OnboardingScreen({
   onDeleteSavedPerson,
   onDirectoryQueryChange,
   onSearchDirectory,
+  onToggleDirectory,
   onAddRelationship,
   onLoadDirectoryProfile,
   onPublishPrimaryProfile,
@@ -157,6 +159,7 @@ export function OnboardingScreen({
   directoryEnabled: boolean;
   directoryQuery: string;
   directoryResults: DirectoryProfile[];
+  directoryExpanded: boolean;
   directoryLoading: boolean;
   relationshipLoading: boolean;
   publicProfileLoading: boolean;
@@ -176,6 +179,7 @@ export function OnboardingScreen({
   onDeleteSavedPerson: (id: string) => void;
   onDirectoryQueryChange: (value: string) => void;
   onSearchDirectory: () => void;
+  onToggleDirectory: () => void;
   onAddRelationship: (profileId: string) => void;
   onLoadDirectoryProfile: (profile: DirectoryProfile, slot: PersonSlot) => void;
   onPublishPrimaryProfile: () => void;
@@ -242,10 +246,13 @@ export function OnboardingScreen({
               <Field label="Search people" value={directoryQuery} onChangeText={onDirectoryQueryChange} placeholder="Taylor Swift, Zendaya, or a friend on Ark" autoCapitalize="words" />
               <View style={styles.inlineActions}>
                 <SecondaryButton label={directoryLoading ? 'Searching…' : 'Search directory'} onPress={onSearchDirectory} disabled={directoryLoading} icon={<Feather name="search" size={15} color={palette.ink} />} />
+                <SecondaryButton label={directoryExpanded ? 'Hide directory' : 'Browse directory'} onPress={onToggleDirectory} disabled={directoryLoading} icon={<MaterialCommunityIcons name={directoryExpanded ? 'chevron-up' : 'view-grid-outline'} size={15} color={palette.ink} />} />
                 <SecondaryButton label={relationshipLoading ? 'Updating…' : `Relationships (${relationships.length})`} onPress={onSearchDirectory} disabled={relationshipLoading} icon={<MaterialCommunityIcons name="account-heart-outline" size={15} color={palette.ink} />} />
               </View>
               {directoryError ? <Text style={styles.errorText}>{directoryError}</Text> : null}
-              {directoryResults.length === 0 ? (
+              {!directoryExpanded ? (
+                <Text style={styles.mutedText}>The directory stays collapsed by default so the onboarding page stays compact. Search for someone specific or open the directory when you want to browse.</Text>
+              ) : directoryResults.length === 0 ? (
                 <Text style={styles.mutedText}>Search to browse celebrity charts or friends who have published a chart profile.</Text>
               ) : (
                 <View style={styles.directoryStack}>
