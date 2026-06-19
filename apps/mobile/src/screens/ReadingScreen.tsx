@@ -184,16 +184,16 @@ function buildOpeningSummary(result: AnyReadingResponse, strongest?: TopicJudgme
 function buildReadingFlow(result: AnyReadingResponse) {
   return result.chart_type === 'synastry'
     ? [
-        'Start with the opening summary so you know the relationship story before reading the technique.',
-        'Then move through the relationship cards one concept at a time instead of trying to decode every term at once.',
-        'Use the sky card as short-term weather, not the whole relationship reading.',
+        'Start with the thesis and action cards so you know what the relationship is asking of you before you read the technique.',
+        'Use the climate, season, and weather card to separate long-term bond pattern from the current moment.',
+        'Read the relationship cards one concept at a time instead of trying to decode every term at once.',
         'Open the evidence only when you want to see exactly why the app is making a claim.',
       ]
     : [
-        'Start with the opening summary first, before looking at the doctrine.',
-        'Then read the timing technique card so you know why this year has its current emphasis.',
-        'Use the planet, Fortune/Spirit, and support/strain cards to see what matters most.',
-        'Treat the current sky as temporary weather layered on top of the larger year map.',
+        'Start with the thesis and action cards before you look at the chart or doctrine.',
+        'Use climate, season, and weather to separate baseline pattern from the current year and the current day.',
+        'Then read the support, pressure, and timing cards to see what part of life is asking for the most attention.',
+        'Treat the current sky as temporary weather layered on top of the larger seasonal pattern.',
         'Open the technical drawer only when you want the explicit calculation trail.',
       ];
 }
@@ -202,6 +202,20 @@ function learnCardsForGuide(blocks: InterpretationBlock[]) {
   return blocks
     .filter((block) => block.technical_terms?.length || block.traditional_doctrine || block.plain_meaning)
     .slice(0, 8);
+}
+
+function uniqueText(values: Array<string | null | undefined>) {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  values.forEach((value) => {
+    const text = value?.trim();
+    if (!text) return;
+    const key = text.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    output.push(text);
+  });
+  return output;
 }
 
 function CollapsibleCard({
@@ -278,6 +292,20 @@ export function ReadingScreen({
     : null;
   const readingFlow = buildReadingFlow(result);
   const guideCards = learnCardsForGuide(blocks);
+  const summaryParagraphs = uniqueText([
+    result.reading.practical_focus,
+    result.reading.emotional_weather,
+    result.reading.practical_meaning,
+    result.reading.life_translation,
+  ]);
+  const actionItems = uniqueText([
+    ...(result.reading.supporting_actions ?? []),
+  ]);
+  const layerCards = [
+    result.reading.climate_context ? { label: 'Climate', text: result.reading.climate_context } : null,
+    result.reading.season_context ? { label: 'Season', text: result.reading.season_context } : null,
+    result.reading.weather_context ? { label: 'Weather', text: result.reading.weather_context } : null,
+  ].filter((item): item is { label: string; text: string } => Boolean(item));
   const suggestedQuestions = [
     'Why is this the main theme of my year?',
     'What does Fortune and Spirit mean in this reading?',
@@ -341,16 +369,72 @@ export function ReadingScreen({
 
   const summaryHero = (
     <View style={styles.heroCard}>
-      <Text style={styles.eyebrow}>{result.chart_type === 'synastry' ? 'Relationship Reading' : 'Reading'}</Text>
-      <Text style={styles.title}>Your year</Text>
-      <Text style={styles.summaryLead}>{openingSummary.title}</Text>
-      {openingSummary.paragraphs.filter((paragraph): paragraph is string => Boolean(paragraph)).map((paragraph, index) => (
+      <Text style={styles.eyebrow}>{result.chart_type === 'synastry' ? 'Relationship Reading' : 'Chart Reading'}</Text>
+      <Text style={styles.title}>Start here</Text>
+      <Text style={styles.summaryLead}>{result.reading.headline}</Text>
+      {summaryParagraphs.map((paragraph, index) => (
         <GlossaryText key={`${index}-${paragraph.slice(0, 24)}`} text={paragraph} textStyle={styles.body} />
       ))}
-      {openingSummary.testimony ? <Text style={styles.oracle}>{openingSummary.testimony}</Text> : null}
+      {!summaryParagraphs.length && openingSummary.paragraphs.filter((paragraph): paragraph is string => Boolean(paragraph)).map((paragraph, index) => (
+        <GlossaryText key={`fallback-${index}-${paragraph.slice(0, 24)}`} text={paragraph} textStyle={styles.body} />
+      ))}
       {result.reading.oracle ? <Text style={styles.supporting}>{result.reading.oracle}</Text> : null}
     </View>
   );
+
+  const actionCard = (
+    <SurfaceCard title="What to do with this reading" subtitle="Lead with action, not just interpretation.">
+      {result.reading.primary_action ? (
+        <View style={styles.actionPanel}>
+          <Text style={styles.sectionLabel}>Primary action</Text>
+          <GlossaryText text={result.reading.primary_action} textStyle={styles.cardTitleBody} />
+        </View>
+      ) : null}
+      {actionItems.length ? (
+        <View style={styles.actionPanel}>
+          <Text style={styles.sectionLabel}>Supporting actions</Text>
+          {actionItems.map((line) => (
+            <Text key={line} style={styles.flowText}>• {line}</Text>
+          ))}
+        </View>
+      ) : null}
+      {result.reading.avoid_pattern ? (
+        <View style={styles.actionPanel}>
+          <Text style={styles.sectionLabel}>Watch for</Text>
+          <GlossaryText text={result.reading.avoid_pattern} textStyle={styles.body} />
+        </View>
+      ) : null}
+      {(result.reading.reflection_prompt || result.reading.check_in_question) ? (
+        <View style={styles.actionGrid}>
+          {result.reading.reflection_prompt ? (
+            <View style={styles.actionPanel}>
+              <Text style={styles.sectionLabel}>Reflection prompt</Text>
+              <GlossaryText text={result.reading.reflection_prompt} textStyle={styles.body} />
+            </View>
+          ) : null}
+          {result.reading.check_in_question ? (
+            <View style={styles.actionPanel}>
+              <Text style={styles.sectionLabel}>Check-in question</Text>
+              <GlossaryText text={result.reading.check_in_question} textStyle={styles.body} />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+    </SurfaceCard>
+  );
+
+  const contextLayerCard = layerCards.length ? (
+    <SurfaceCard title="Climate, season, and weather" subtitle="This keeps long-term pattern separate from the current year and the current day.">
+      <View style={styles.layerStack}>
+        {layerCards.map((item) => (
+          <View key={item.label} style={styles.layerCard}>
+            <Text style={styles.sectionLabel}>{item.label}</Text>
+            <GlossaryText text={item.text} textStyle={styles.body} />
+          </View>
+        ))}
+      </View>
+    </SurfaceCard>
+  ) : null;
 
   const chartMapCard = (
     <SurfaceCard title="Visual chart map" subtitle="The outer ring shows the natal chart. The inner ring shows the timing or live overlay. The center lines show major aspects.">
@@ -456,9 +540,6 @@ export function ReadingScreen({
 
   return (
     <>
-      {activeTab === 'reading' ? chartMapCard : null}
-      {activeTab === 'reading' ? dailyHoroscopeCard : null}
-
       <View style={styles.tabWrap}>
         <Pressable style={[styles.tabPill, activeTab === 'reading' && styles.tabPillActive]} onPress={() => setActiveTab('reading')}>
           <Text style={[styles.tabText, activeTab === 'reading' && styles.tabTextActive]}>Reading</Text>
@@ -473,38 +554,18 @@ export function ReadingScreen({
 
       {activeTab === 'reading' ? (
         <>
-
           <Text style={styles.termHint}>Tap underlined terms for quick definitions.</Text>
 
           {summaryHero}
-
-          {annualBlock ? (
-            <SurfaceCard title="Why this year has this theme" subtitle="Annual timing and emphasis.">
-              <GlossaryText text={annualBlock.plain_meaning || annualBlock.summary} textStyle={styles.body} />
-              {annualBlock.why_this_matters ? <GlossaryText text={annualBlock.why_this_matters} textStyle={styles.whyLine} /> : null}
-              {annualBlock.traditional_doctrine ? <GlossaryText text={annualBlock.traditional_doctrine} textStyle={styles.supporting} /> : null}
-            </SurfaceCard>
-          ) : null}
-
-          {yearMapBlock ? (
-            <SurfaceCard title="The planet carrying the year" subtitle="The main planet shaping the year.">
-              <GlossaryText text={yearMapBlock.plain_meaning || yearMapBlock.summary} textStyle={styles.body} />
-              {yearMapBlock.why_this_matters ? <GlossaryText text={yearMapBlock.why_this_matters} textStyle={styles.whyLine} /> : null}
-            </SurfaceCard>
-          ) : null}
-
-          {fortuneBlock ? (
-            <SurfaceCard title="What happens to you vs. what you choose" subtitle="Fortune shows circumstance. Spirit shows chosen direction.">
-              <GlossaryText text={fortuneBlock.plain_meaning || fortuneBlock.summary} textStyle={styles.body} />
-              {fortuneBlock.why_this_matters ? <GlossaryText text={fortuneBlock.why_this_matters} textStyle={styles.whyLine} /> : null}
-            </SurfaceCard>
-          ) : null}
+          {actionCard}
+          {contextLayerCard}
+          {dailyHoroscopeCard}
 
           {(strongest || strained) ? (
-            <SurfaceCard title="Where the chart gives support and where it asks for care" subtitle="The chart does not treat every life area equally.">
+            <SurfaceCard title="Where life is easiest to use and where it asks for care" subtitle="The chart does not treat every life area equally.">
               {strongest ? (
                 <View style={styles.supportBlock}>
-                  <Text style={styles.sectionLabel}>Most supported</Text>
+                  <Text style={styles.sectionLabel}>Best place to lean</Text>
                   <Text style={styles.cardTitle}>{strongest.title}</Text>
                   <GlossaryText text={topicSummary(strongest) || ''} textStyle={styles.body} />
                   {confidenceExplainer(strongest) ? <GlossaryText text={confidenceExplainer(strongest) || ''} textStyle={styles.supporting} /> : null}
@@ -512,7 +573,7 @@ export function ReadingScreen({
               ) : null}
               {strained ? (
                 <View style={styles.supportBlock}>
-                  <Text style={styles.sectionLabel}>Most strained</Text>
+                  <Text style={styles.sectionLabel}>Needs more care</Text>
                   <Text style={styles.cardTitle}>{strained.title}</Text>
                   <GlossaryText text={topicSummary(strained) || ''} textStyle={styles.body} />
                   {confidenceExplainer(strained) ? <GlossaryText text={confidenceExplainer(strained) || ''} textStyle={styles.supporting} /> : null}
@@ -536,6 +597,30 @@ export function ReadingScreen({
               </View>
             </SurfaceCard>
           ) : null}
+
+          {annualBlock ? (
+            <SurfaceCard title="Why this year has this theme" subtitle="Annual timing and emphasis.">
+              <GlossaryText text={annualBlock.plain_meaning || annualBlock.summary} textStyle={styles.body} />
+              {annualBlock.why_this_matters ? <GlossaryText text={annualBlock.why_this_matters} textStyle={styles.whyLine} /> : null}
+              {annualBlock.traditional_doctrine ? <GlossaryText text={annualBlock.traditional_doctrine} textStyle={styles.supporting} /> : null}
+            </SurfaceCard>
+          ) : null}
+
+          {yearMapBlock ? (
+            <SurfaceCard title="The planet carrying the year" subtitle="The main planet shaping the year.">
+              <GlossaryText text={yearMapBlock.plain_meaning || yearMapBlock.summary} textStyle={styles.body} />
+              {yearMapBlock.why_this_matters ? <GlossaryText text={yearMapBlock.why_this_matters} textStyle={styles.whyLine} /> : null}
+            </SurfaceCard>
+          ) : null}
+
+          {fortuneBlock ? (
+            <SurfaceCard title="What happens to you vs. what you choose" subtitle="Fortune shows circumstance. Spirit shows chosen direction.">
+              <GlossaryText text={fortuneBlock.plain_meaning || fortuneBlock.summary} textStyle={styles.body} />
+              {fortuneBlock.why_this_matters ? <GlossaryText text={fortuneBlock.why_this_matters} textStyle={styles.whyLine} /> : null}
+            </SurfaceCard>
+          ) : null}
+
+          {chartMapCard}
 
           <SurfaceCard title="Reading details" subtitle="Open any card for the supporting doctrine and evidence.">
             {blocks.map((block) => (
@@ -723,10 +808,20 @@ const styles = StyleSheet.create({
   panelText: { fontSize: 14, lineHeight: 22, color: palette.ink },
   supporting: { fontSize: 13, lineHeight: 21, color: palette.muted },
   whyLine: { fontSize: 14, lineHeight: 22, color: palette.ink, fontWeight: '700' },
+  cardTitleBody: { fontSize: 18, lineHeight: 27, color: palette.ink, fontWeight: '700' },
   horoscopeHeader: { gap: 6 },
   horoscopeHeadline: { fontSize: 19, lineHeight: 27, color: palette.ink, fontWeight: '700' },
   horoscopeSources: { fontSize: 11, lineHeight: 17, color: palette.muted, fontWeight: '600' },
   horoscopeGrid: { gap: 10 },
+  actionGrid: { gap: 10 },
+  actionPanel: {
+    backgroundColor: palette.surfaceStrong,
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: 16,
+    padding: 14,
+    gap: 8,
+  },
   horoscopePanel: {
     backgroundColor: palette.surfaceStrong,
     borderWidth: 1,
@@ -811,6 +906,15 @@ const styles = StyleSheet.create({
   flowStack: { gap: 10 },
   flowText: { fontSize: 14, lineHeight: 22, color: palette.ink },
   flowIndex: { color: palette.accent, fontWeight: '700' },
+  layerStack: { gap: 10 },
+  layerCard: {
+    backgroundColor: palette.surfaceStrong,
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: 16,
+    padding: 14,
+    gap: 6,
+  },
   glossaryWrap: { gap: 12 },
   glossaryCard: { backgroundColor: palette.surface, borderWidth: 1, borderColor: palette.border, borderRadius: 14, padding: 16, gap: 6 },
   glossaryTerm: { fontSize: 15, lineHeight: 21, color: palette.ink, fontWeight: '700' },

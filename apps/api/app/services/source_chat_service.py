@@ -264,9 +264,15 @@ def _build_reading_chunks(reading_payload: Optional[dict[str, Any]]) -> list[Cor
 
     opening_bits = [
         reading.get("headline"),
+        reading.get("practical_focus"),
+        reading.get("emotional_weather"),
         reading.get("practical_meaning"),
         reading.get("life_translation"),
+        reading.get("primary_action"),
         reading.get("guidance"),
+        reading.get("avoid_pattern"),
+        reading.get("reflection_prompt"),
+        reading.get("check_in_question"),
     ]
     opening_text = _clean_text(" ".join(bit for bit in opening_bits if isinstance(bit, str) and bit.strip()))
     if opening_text:

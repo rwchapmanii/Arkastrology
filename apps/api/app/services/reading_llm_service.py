@@ -537,6 +537,16 @@ class ReadingLLMService:
             '    "practical_meaning": "string",\n'
             '    "life_translation": "string",\n'
             '    "guidance": "string",\n'
+            '    "emotional_weather": "string or null",\n'
+            '    "practical_focus": "string or null",\n'
+            '    "primary_action": "string or null",\n'
+            '    "supporting_actions": ["string"],\n'
+            '    "avoid_pattern": "string or null",\n'
+            '    "reflection_prompt": "string or null",\n'
+            '    "check_in_question": "string or null",\n'
+            '    "weather_context": "string or null",\n'
+            '    "season_context": "string or null",\n'
+            '    "climate_context": "string or null",\n'
             '    "prompt": "string or null",\n'
             '    "timing_focus": "string or null",\n'
             '    "ritual_focus": "string or null",\n'
@@ -577,6 +587,16 @@ class ReadingLLMService:
                 "practical_meaning": _clean_string(reading_payload.get("practical_meaning")) or reading.practical_meaning,
                 "life_translation": _clean_string(reading_payload.get("life_translation")) or reading.life_translation,
                 "guidance": _clean_string(reading_payload.get("guidance")) or reading.guidance,
+                "emotional_weather": _clean_string(reading_payload.get("emotional_weather")) or reading.emotional_weather,
+                "practical_focus": _clean_string(reading_payload.get("practical_focus")) or reading.practical_focus,
+                "primary_action": _clean_string(reading_payload.get("primary_action")) or reading.primary_action,
+                "supporting_actions": _clean_string_list(reading_payload.get("supporting_actions"), 4) or reading.supporting_actions,
+                "avoid_pattern": _clean_string(reading_payload.get("avoid_pattern")) or reading.avoid_pattern,
+                "reflection_prompt": _clean_string(reading_payload.get("reflection_prompt")) or reading.reflection_prompt,
+                "check_in_question": _clean_string(reading_payload.get("check_in_question")) or reading.check_in_question,
+                "weather_context": _clean_string(reading_payload.get("weather_context")) or reading.weather_context,
+                "season_context": _clean_string(reading_payload.get("season_context")) or reading.season_context,
+                "climate_context": _clean_string(reading_payload.get("climate_context")) or reading.climate_context,
                 "prompt": _clean_string(reading_payload.get("prompt")) or reading.prompt,
                 "timing_focus": _clean_string(reading_payload.get("timing_focus")) or reading.timing_focus,
                 "ritual_focus": _clean_string(reading_payload.get("ritual_focus")) or reading.ritual_focus,

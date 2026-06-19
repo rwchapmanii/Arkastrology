@@ -2056,6 +2056,19 @@ class SynastryReadingService:
             practical_meaning="The API can resolve both birth contexts and compare two charts once sufficient inputs are present.",
             life_translation="The Ark treats synastry as natal structure first, cross-chart contact second, and optional modern overlays after that.",
             guidance="Provide accurate birth context for both people so the relational prediction layer becomes specific.",
+            emotional_weather="This starts as a relationship climate reading, not an instant compatibility verdict.",
+            practical_focus="Get both birth contexts accurate first so the reading can name the bond in a concrete way.",
+            primary_action="Confirm both birth profiles before leaning on relationship timing or house-based claims.",
+            supporting_actions=[
+                "Check whether both birth times are exact.",
+                "Treat first impressions as provisional until the full chart pair is available.",
+            ],
+            avoid_pattern="Do not turn incomplete input into a fixed relationship story.",
+            reflection_prompt="What is already clear in the bond, even before astrology adds detail?",
+            check_in_question="What are you actually trying to understand about this relationship right now?",
+            weather_context="Short-term transits describe what is loud in the relationship right now, not the whole bond.",
+            season_context="Current profection years and solar returns show the season each person is bringing into the bond.",
+            climate_context="The natal charts describe the relationship climate: attraction style, friction pattern, and how each person tends to bond.",
             prompt="What is truly happening between the two people, and what belongs to chart structure rather than wish or projection?",
             oracle="The Ark is waiting for enough context to name the bond's live current.",
         )
@@ -2141,6 +2154,19 @@ class SynastryReadingService:
                         practical_meaning=prediction_cards[0].summary if prediction_cards else "A simpler relationship reading is available.",
                         life_translation="This simpler mode focuses on the most stable planet-to-planet patterns and avoids house or angle claims until both birth times are exact.",
                         guidance=prediction_cards[1].summary if len(prediction_cards) > 1 else "Confirm both birth times before relying on more detailed relationship timing or house-based claims.",
+                        emotional_weather="This reading can still describe the bond's tone, but it is intentionally cautious about timing, houses, and angles.",
+                        practical_focus="Use the strongest recurring bond pattern first and leave detailed timing for when both birth times are exact.",
+                        primary_action=prediction_cards[0].opportunities[0] if prediction_cards and prediction_cards[0].opportunities else "Name the recurring relationship pattern that already shows up in real life.",
+                        supporting_actions=[
+                            *(prediction_cards[0].rituals[:2] if prediction_cards and prediction_cards[0].rituals else []),
+                            "Treat this as climate-level relationship guidance, not final timing.",
+                        ][:3],
+                        avoid_pattern=prediction_cards[0].cautions[0] if prediction_cards and prediction_cards[0].cautions else "Do not confuse a simplified reading with the full relationship map.",
+                        reflection_prompt="Which part of this relationship already feels consistently true, even without exact timing?",
+                        check_in_question="What pattern between the two of you keeps repeating regardless of circumstances?",
+                        weather_context="Current transits still add weather, but simple mode should not be treated like a fully timed relationship forecast.",
+                        season_context="Without exact times, the season is broader: what each person is carrying matters more than precise house triggers.",
+                        climate_context="The climate is still visible through stable cross-chart patterns, attraction, friction, and repeated response styles.",
                         prompt="Which birth time is still missing or uncertain?",
                         timing_focus="Simple mode keeps the relationship reading focused on the most reliable shared patterns.",
                         ritual_focus="; ".join(prediction_cards[0].rituals[:2]) if prediction_cards else None,
@@ -2302,8 +2328,47 @@ class SynastryReadingService:
                 bridge_block = next((block for block in interpretation_blocks if block.block_type == "synastry_yearly_bridge"), None)
                 topic_block = next((block for block in interpretation_blocks if block.block_type == "synastry_topic_judgment"), None)
                 leading_topic = topic_judgments[0] if topic_judgments else None
+                straining_topic = next((topic for topic in reversed(topic_judgments) if topic.classification in {"difficult", "mixed", "emphasized"}), leading_topic)
                 levi_block = next((block for block in interpretation_blocks if block.block_type == "levi_current"), None)
                 climate_block = next((block for block in interpretation_blocks if block.block_type == "relationship_climate"), None)
+                practical_focus = (
+                    f"The relationship topic asking for the most conscious handling right now is {leading_topic.title.lower()}."
+                    if leading_topic else
+                    "The main task is to read the bond through each person's current year before jumping to compatibility conclusions."
+                )
+                emotional_weather = (
+                    f"The bond may feel more charged around {leading_topic.title.lower()}, because that is where the current testimony is repeating most strongly."
+                    if leading_topic else
+                    "The bond may feel more emotionally revealing than usual because both current years are pressing on the relationship at once."
+                )
+                primary_action = (
+                    prediction_cards[0].opportunities[0]
+                    if prediction_cards and prediction_cards[0].opportunities else
+                    "Name the relationship pattern that is active now, then respond to that pattern directly instead of arguing only about the latest incident."
+                )
+                supporting_actions = [
+                    *(prediction_cards[0].rituals[:2] if prediction_cards and prediction_cards[0].rituals else []),
+                    (
+                        f"Use the support around {leading_topic.title.lower()} instead of assuming every activated area is equally strained."
+                        if leading_topic else
+                        "Separate the long-term bond from today's temporary emotional weather."
+                    ),
+                ][:3]
+                avoid_pattern = (
+                    prediction_cards[0].cautions[0]
+                    if prediction_cards and prediction_cards[0].cautions else
+                    (
+                        f"Do not let pressure around {straining_topic.title.lower()} define the whole bond."
+                        if straining_topic else
+                        "Do not flatten the relationship into one fight, one fear, or one moment."
+                    )
+                )
+                reflection_prompt = "Where does this pattern already show up in lived relationship life, before either person starts defending their story about it?"
+                check_in_question = (
+                    f"What would it look like to use the support in {leading_topic.title.lower()} more deliberately this week?"
+                    if leading_topic else
+                    "What part of this reading already feels true in ordinary interaction?"
+                )
                 status = "synastry_calculated"
                 calculation_status = "calculated"
                 engine_status = "flatlib_swisseph_ready"
@@ -2333,6 +2398,16 @@ class SynastryReadingService:
                         if len(prediction_cards) > 1 else
                         "Name each person's current year first, then ask how the strongest aspect is carrying that pressure or support."
                     ),
+                    emotional_weather=emotional_weather,
+                    practical_focus=practical_focus,
+                    primary_action=primary_action,
+                    supporting_actions=supporting_actions,
+                    avoid_pattern=avoid_pattern,
+                    reflection_prompt=reflection_prompt,
+                    check_in_question=check_in_question,
+                    weather_context="Current transits are the weather: they show what is loud between the two people right now, but not the whole bond.",
+                    season_context="The season comes from the two current profection years and solar returns, which describe what each person is carrying into the relationship now.",
+                    climate_context="The natal frames are the climate: they describe attraction style, conflict style, loyalty, fear, desire, and how each person tends to bond over time.",
                     prompt=(
                         "What does each person's current year ask of the bond before the bond asks anything else of them?"
                         if request.include_red_book_prompts

@@ -317,6 +317,16 @@ class ReadingSection(BaseModel):
     life_translation: Optional[str] = None
     psychological_meaning: Optional[str] = None
     guidance: str
+    emotional_weather: Optional[str] = None
+    practical_focus: Optional[str] = None
+    primary_action: Optional[str] = None
+    supporting_actions: List[str] = Field(default_factory=list)
+    avoid_pattern: Optional[str] = None
+    reflection_prompt: Optional[str] = None
+    check_in_question: Optional[str] = None
+    weather_context: Optional[str] = None
+    season_context: Optional[str] = None
+    climate_context: Optional[str] = None
     prompt: Optional[str] = None
     timing_focus: Optional[str] = None
     ritual_focus: Optional[str] = None

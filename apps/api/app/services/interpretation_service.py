@@ -1004,6 +1004,21 @@ class NatalInterpretationService:
             )
         return patterns[:3]
 
+    @staticmethod
+    def _best_supported_topic(topic_judgments: List[TopicJudgmentRecord]) -> Optional[TopicJudgmentRecord]:
+        if not topic_judgments:
+            return None
+        return max(topic_judgments, key=lambda item: ((item.support_score or 0) + (item.activation_score or 0), item.score))
+
+    @staticmethod
+    def _most_strained_topic(topic_judgments: List[TopicJudgmentRecord], strongest: Optional[TopicJudgmentRecord] = None) -> Optional[TopicJudgmentRecord]:
+        if not topic_judgments:
+            return None
+        ranked = sorted(topic_judgments, key=lambda item: ((item.strain_score or 0), -item.score), reverse=True)
+        if strongest and len(ranked) > 1 and ranked[0].key == strongest.key:
+            return ranked[1]
+        return ranked[0]
+
     @classmethod
     def _fortune_spirit_alignment(cls, chart_data: NatalTechnicalChart, ontology: Dict) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
         context = chart_data.traditional_context
@@ -2450,6 +2465,9 @@ class NatalInterpretationService:
         if chart_data.traditional_context:
             context = chart_data.traditional_context
             year_map = cls.build_year_map_record(chart_data, ontology, annual_profection, solar_return)
+            topic_judgments = cls.build_topic_judgments(chart_data, ontology)
+            strongest_topic = cls._best_supported_topic(topic_judgments)
+            strained_topic = cls._most_strained_topic(topic_judgments, strongest_topic)
             foundation_block = next((block for block in blocks if block.block_type == "chart_foundation"), None)
             fortune_spirit_block = next((block for block in blocks if block.block_type == "fortune_spirit"), None)
             solar_return_block = next((block for block in blocks if block.block_type == "solar_return"), None)
@@ -2458,6 +2476,66 @@ class NatalInterpretationService:
             if include_red_book_prompts:
                 red_book_block = next((block for block in blocks if block.block_type == "imaginal_prompt"), None)
                 prompt = red_book_block.summary if red_book_block else "Record symbols before interpreting them."
+            season_context = (
+                year_map_block.plain_meaning
+                if year_map_block else
+                "Your current season comes from the annual profection and solar return, which show what part of life is becoming louder this year."
+            )
+            climate_context = (
+                foundation_block.plain_meaning
+                if foundation_block else
+                "Your natal chart is the climate: the baseline pattern of temperament, needs, strengths, and pressure points you keep carrying."
+            )
+            practical_focus = (
+                f"The main life area asking for conscious attention is {strongest_topic.title.lower()}."
+                if strongest_topic else
+                "The chart is asking for conscious attention to the life themes that are repeating most strongly this year."
+            )
+            emotional_weather = (
+                f"You may feel pulled between what is already working around {strongest_topic.title.lower()} and the pressure gathering around {strained_topic.title.lower()}."
+                if strongest_topic and strained_topic and strongest_topic.key != strained_topic.key else
+                (
+                    f"You may notice extra emotional charge around {strongest_topic.title.lower()}, because that topic is louder than usual right now."
+                    if strongest_topic else
+                    "You may feel the year as a repeated push to notice what keeps asking for maturity, not just what feels dramatic in the moment."
+                )
+            )
+            primary_action = (
+                prediction_cards[0].opportunities[0]
+                if prediction_cards and prediction_cards[0].opportunities else
+                (year_map.guidance if year_map and year_map.guidance else "Handle one concrete part of the live theme directly instead of staying at the level of interpretation.")
+            )
+            supporting_actions = [
+                *(prediction_cards[0].rituals[:2] if prediction_cards and prediction_cards[0].rituals else []),
+                (
+                    f"Use the strongest support in {strongest_topic.title.lower()} instead of acting as if every part of life is equally strained."
+                    if strongest_topic else
+                    "Name the repeating pattern in plain language before you react to it."
+                ),
+            ][:3]
+            avoid_pattern = (
+                prediction_cards[0].cautions[0]
+                if prediction_cards and prediction_cards[0].cautions else
+                (
+                    f"Do not let pressure around {strained_topic.title.lower()} define your whole reading."
+                    if strained_topic else
+                    "Do not mistake one charged theme for the whole shape of the chart."
+                )
+            )
+            reflection_prompt = (
+                "Where is this theme already showing up in ordinary life, even before it becomes dramatic?"
+                if not include_red_book_prompts else
+                prompt or "Where is this theme already showing up in ordinary life, even before it becomes dramatic?"
+            )
+            check_in_question = (
+                f"What would it look like to use the support in {strongest_topic.title.lower()} without ignoring the pressure in {strained_topic.title.lower()}?"
+                if strongest_topic and strained_topic and strongest_topic.key != strained_topic.key else
+                (
+                    f"What one action would make {strongest_topic.title.lower()} feel more intentional today?"
+                    if strongest_topic else
+                    "What part of this reading already feels true in lived experience?"
+                )
+            )
             oracle = None
             if annual_profection and solar_return and solar_return.year_lord:
                 oracle = (
@@ -2475,18 +2553,36 @@ class NatalInterpretationService:
             elif context.ascendant_ruler:
                 oracle = f"The Ark starts with {context.ascendant_ruler.lower()} because it rules the Ascendant."
             headline = f"{context.ascendant_sign} rising sets the baseline, and {context.ascendant_ruler} carries the chart's first response to life."
-            if year_map and year_map.activated_house_title and year_map.lord_of_year:
+            if year_map and strongest_topic:
                 headline = (
-                    f"This is a {year_map.activated_house_title} year ruled by {year_map.lord_of_year}."
+                    f"This season is asking you to handle {strongest_topic.title.lower()} more consciously."
                 )
             return ReadingSection(
                 headline=headline,
-                practical_meaning=year_map_block.summary if year_map_block else (foundation_block.summary if foundation_block else "Traditional chart structure is available."),
-                life_translation=fortune_spirit_block.summary if fortune_spirit_block else (solar_return_block.summary if solar_return_block else "Fortune and Spirit are available for contextual judgment."),
-                guidance=prediction_cards[0].summary if prediction_cards else "Read repeated testimony before making a strong claim.",
+                practical_meaning=(
+                    strongest_topic.synthesis
+                    if strongest_topic and strongest_topic.synthesis else
+                    (year_map_block.summary if year_map_block else (foundation_block.summary if foundation_block else "Traditional chart structure is available."))
+                ),
+                life_translation=(
+                    f"In lived terms, this season is less about abstract astrology and more about how you carry {strongest_topic.title.lower()} under real pressure, real support, and repeated choices."
+                    if strongest_topic else
+                    (fortune_spirit_block.summary if fortune_spirit_block else (solar_return_block.summary if solar_return_block else "Fortune and Spirit are available for contextual judgment."))
+                ),
+                guidance=primary_action,
+                emotional_weather=emotional_weather,
+                practical_focus=practical_focus,
+                primary_action=primary_action,
+                supporting_actions=supporting_actions,
+                avoid_pattern=avoid_pattern,
+                reflection_prompt=reflection_prompt,
+                check_in_question=check_in_question,
+                weather_context="Daily transits are the weather: they show what is loud right now, but they do not replace the bigger pattern.",
+                season_context=season_context,
+                climate_context=climate_context,
                 prompt=prompt,
-                timing_focus=prediction_cards[0].summary if prediction_cards else None,
-                ritual_focus="; ".join(prediction_cards[0].rituals[:2]) if prediction_cards else None,
+                timing_focus="Read the chart in three layers: natal chart as climate, annual profection and solar return as season, and daily transits as weather.",
+                ritual_focus="; ".join(supporting_actions[:2]) if supporting_actions else None,
                 oracle=oracle,
             )
 
@@ -2539,8 +2635,21 @@ class NatalInterpretationService:
             practical_meaning=practical,
             life_translation=life_translation,
             guidance=guidance,
+            emotional_weather="This simpler mode speaks more broadly because the birth time is not exact, but the main emotional patterns are still visible.",
+            practical_focus="Use the most stable patterns first and leave exact timing claims for when the birth time is verified.",
+            primary_action="Notice which theme already feels true in your ordinary life before leaning on more detailed interpretation.",
+            supporting_actions=[
+                "Write down the pattern you notice most often.",
+                "Use the stable planetary layer before making house-based claims.",
+            ],
+            avoid_pattern="Do not treat simple mode like a fully timed chart.",
+            reflection_prompt=prompt or "What pattern in this simplified reading already feels familiar?",
+            check_in_question="What part of this reading describes your lived experience most clearly right now?",
+            weather_context="Without an exact birth time, daily weather is read more lightly and should not be treated as the whole story.",
+            season_context="Without exact timing, the season is broader and less house-specific.",
+            climate_context="The climate is still readable through planets and stable aspects even when the clock is uncertain.",
             prompt=prompt,
-            timing_focus=prediction_cards[0].summary if prediction_cards else None,
+            timing_focus="Simple mode keeps the focus on climate and recurring pattern before precise seasonal or daily timing.",
             ritual_focus=ritual_focus,
             oracle=oracle,
         )

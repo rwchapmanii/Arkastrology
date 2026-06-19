@@ -9,6 +9,16 @@ export type ReadingSection = {
   life_translation?: string | null;
   psychological_meaning?: string | null;
   guidance: string;
+  emotional_weather?: string | null;
+  practical_focus?: string | null;
+  primary_action?: string | null;
+  supporting_actions: string[];
+  avoid_pattern?: string | null;
+  reflection_prompt?: string | null;
+  check_in_question?: string | null;
+  weather_context?: string | null;
+  season_context?: string | null;
+  climate_context?: string | null;
   prompt?: string | null;
   timing_focus?: string | null;
   ritual_focus?: string | null;

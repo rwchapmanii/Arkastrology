@@ -227,6 +227,24 @@ class AstrologyAccuracyTests(unittest.TestCase):
         year_map_block = next(block for block in response.interpretation_blocks if block.block_type == "year_map")
         self.assertIn("natal", year_map_block.summary.lower())
         self.assertIn("solar return", year_map_block.summary.lower())
+        self.assertTrue(response.reading.practical_focus)
+        self.assertTrue(response.reading.emotional_weather)
+        self.assertTrue(response.reading.primary_action)
+        self.assertGreaterEqual(len(response.reading.supporting_actions), 2)
+        self.assertTrue(response.reading.avoid_pattern)
+        self.assertTrue(response.reading.reflection_prompt)
+        self.assertTrue(response.reading.check_in_question)
+        self.assertIn("weather", (response.reading.weather_context or "").lower())
+        self.assertTrue(response.reading.season_context)
+        self.assertTrue(any(
+            token in (response.reading.season_context or "").lower()
+            for token in ("year", "current", "solar", "house")
+        ))
+        self.assertTrue(response.reading.climate_context)
+        self.assertTrue(any(
+            token in (response.reading.climate_context or "").lower()
+            for token in ("chart", "rising", "natal", "baseline")
+        ))
 
     def test_natal_response_includes_daily_horoscope(self):
         profile = self.build_profile()
@@ -315,6 +333,24 @@ class AstrologyAccuracyTests(unittest.TestCase):
         self.assertTrue(any("Fortune" in observation or "Spirit" in observation for observation in topic_observations))
         self.assertTrue(any("witnesses Person" in observation or "presses Person" in observation for observation in topic_observations))
         self.assertIn("strongest repeated testimony", response.reading.oracle)
+        self.assertTrue(response.reading.practical_focus)
+        self.assertTrue(response.reading.emotional_weather)
+        self.assertTrue(response.reading.primary_action)
+        self.assertGreaterEqual(len(response.reading.supporting_actions), 2)
+        self.assertTrue(response.reading.avoid_pattern)
+        self.assertTrue(response.reading.reflection_prompt)
+        self.assertTrue(response.reading.check_in_question)
+        self.assertIn("weather", (response.reading.weather_context or "").lower())
+        self.assertTrue(response.reading.season_context)
+        self.assertTrue(any(
+            token in (response.reading.season_context or "").lower()
+            for token in ("year", "current", "solar", "profection")
+        ))
+        self.assertTrue(response.reading.climate_context)
+        self.assertTrue(any(
+            token in (response.reading.climate_context or "").lower()
+            for token in ("relationship", "bond", "natal", "climate")
+        ))
 
     def test_planetary_fallback_chart_suppresses_angles_and_houses(self):
         chart = NatalChartEngine.calculate_planetary_fallback_chart(
