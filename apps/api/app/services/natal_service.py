@@ -16,6 +16,7 @@ from app.services.chart_engine import ChartEngineError, NatalChartEngine
 from app.services.content_loader import load_ontology
 from app.services.interpretation_service import NatalInterpretationService
 from app.services.profile_resolution_service import ProfileResolutionService
+from app.services.reading_llm_service import ReadingLLMService
 from app.services.traditional_astrology_service import TraditionalAstrologyService
 from app.services.transit_service import TransitForecastService
 
@@ -321,31 +322,49 @@ class NatalReadingService:
         else:
             notes.append("Latitude, longitude, and UTC offset remain required for real natal calculation and prediction specificity.")
 
+        technical_summary = TechnicalSummary(
+            calculation_status=calculation_status,
+            engine_status=engine_status,
+            available_ontology_counts=counts,
+            house_system=chart_data.house_system if chart_data else DEFAULT_HOUSE_SYSTEM_LABEL,
+            supported_planets=[planet["display_name"] for planet in ontology["planets"]],
+            supported_aspects=[aspect["display_name"] for aspect in ontology["aspects"]],
+            input_resolution_status=resolution_status,
+            resolved_timezone=resolved_timezone,
+            precision_mode="exact" if request.profile.time_precision == "exact" else "planetary_fallback",
+            chart_data=chart_data,
+            transit_timestamp=transit_timestamp,
+            transit_timezone=transit_timezone,
+            transit_location_status=transit_location_status,
+            transit_chart_data=transit_chart_data,
+            transit_aspects=transit_aspects,
+            annual_profection=annual_profection,
+            solar_return=solar_return,
+            solar_return_chart_data=solar_return_chart_data,
+            topic_judgments=topic_judgments,
+            year_map=year_map,
+        )
+
+        try:
+            reading, daily_horoscope, llm_model = ReadingLLMService.synthesize(
+                chart_type="natal",
+                reading=reading,
+                daily_horoscope=daily_horoscope,
+                technical_summary=technical_summary,
+                interpretation_blocks=interpretation_blocks,
+                source_lenses=source_lenses,
+                prediction_cards=prediction_cards,
+            )
+            if llm_model:
+                notes.append(f"Final reading prose synthesized with {llm_model} on top of the chart evidence.")
+        except RuntimeError as exc:
+            notes.append(str(exc))
+            notes.append("The Ark kept the deterministic reading because LLM synthesis was unavailable for this request.")
+
         return NatalReadingResponse(
             status=status,
             profile=profile,
-            technical_summary=TechnicalSummary(
-                calculation_status=calculation_status,
-                engine_status=engine_status,
-                available_ontology_counts=counts,
-                house_system=chart_data.house_system if chart_data else DEFAULT_HOUSE_SYSTEM_LABEL,
-                supported_planets=[planet["display_name"] for planet in ontology["planets"]],
-                supported_aspects=[aspect["display_name"] for aspect in ontology["aspects"]],
-                input_resolution_status=resolution_status,
-                resolved_timezone=resolved_timezone,
-                precision_mode="exact" if request.profile.time_precision == "exact" else "planetary_fallback",
-                chart_data=chart_data,
-                transit_timestamp=transit_timestamp,
-                transit_timezone=transit_timezone,
-                transit_location_status=transit_location_status,
-                transit_chart_data=transit_chart_data,
-                transit_aspects=transit_aspects,
-                annual_profection=annual_profection,
-                solar_return=solar_return,
-                solar_return_chart_data=solar_return_chart_data,
-                topic_judgments=topic_judgments,
-                year_map=year_map,
-            ),
+            technical_summary=technical_summary,
             reading=reading,
             daily_horoscope=daily_horoscope,
             source_lenses=source_lenses,

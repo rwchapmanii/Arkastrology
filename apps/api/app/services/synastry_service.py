@@ -26,6 +26,7 @@ from app.services.citation_service import CitationService
 from app.services.content_loader import load_ontology
 from app.services.interpretation_service import NatalInterpretationService
 from app.services.profile_resolution_service import ProfileResolutionService
+from app.services.reading_llm_service import ReadingLLMService
 from app.services.traditional_astrology_service import TraditionalAstrologyService
 from app.services.transit_service import TransitForecastService
 
@@ -2377,39 +2378,57 @@ class SynastryReadingService:
         else:
             notes.append("Both birth profiles still need enough place/time context for full synastry calculation and prediction specificity.")
 
+        technical_summary = SynastryTechnicalSummary(
+            calculation_status=calculation_status,
+            engine_status=engine_status,
+            available_ontology_counts=counts,
+            house_system=primary_chart.house_system if primary_chart else DEFAULT_HOUSE_SYSTEM_LABEL,
+            supported_planets=[planet["display_name"] for planet in ontology["planets"]],
+            supported_aspects=[aspect["display_name"] for aspect in ontology["aspects"]],
+            primary_input_resolution_status=primary_resolution,
+            secondary_input_resolution_status=secondary_resolution,
+            primary_resolved_timezone=primary_timezone,
+            secondary_resolved_timezone=secondary_timezone,
+            precision_mode=("exact" if request.primary_profile.time_precision == "exact" and request.secondary_profile.time_precision == "exact" else "planetary_fallback"),
+            primary_chart_data=primary_chart,
+            secondary_chart_data=secondary_chart,
+            inter_chart_aspects=inter_chart_aspects,
+            transit_timestamp=transit_timestamp,
+            transit_timezone=transit_timezone,
+            transit_location_status=transit_location_status,
+            transit_chart_data=transit_chart,
+            primary_transit_aspects=primary_transit_aspects,
+            secondary_transit_aspects=secondary_transit_aspects,
+            primary_annual_profection=primary_annual_profection,
+            secondary_annual_profection=secondary_annual_profection,
+            primary_solar_return=primary_solar_return,
+            secondary_solar_return=secondary_solar_return,
+            primary_solar_return_chart_data=primary_solar_return_chart_data,
+            secondary_solar_return_chart_data=secondary_solar_return_chart_data,
+            topic_judgments=topic_judgments,
+        )
+
+        try:
+            reading, _, llm_model = ReadingLLMService.synthesize(
+                chart_type="synastry",
+                reading=reading,
+                daily_horoscope=None,
+                technical_summary=technical_summary,
+                interpretation_blocks=interpretation_blocks,
+                source_lenses=source_lenses,
+                prediction_cards=prediction_cards,
+            )
+            if llm_model:
+                notes.append(f"Final reading prose synthesized with {llm_model} on top of the chart evidence.")
+        except RuntimeError as exc:
+            notes.append(str(exc))
+            notes.append("The Ark kept the deterministic relationship reading because LLM synthesis was unavailable for this request.")
+
         return SynastryReadingResponse(
             status=status,
             primary_profile=primary_profile,
             secondary_profile=secondary_profile,
-            technical_summary=SynastryTechnicalSummary(
-                calculation_status=calculation_status,
-                engine_status=engine_status,
-                available_ontology_counts=counts,
-                house_system=primary_chart.house_system if primary_chart else DEFAULT_HOUSE_SYSTEM_LABEL,
-                supported_planets=[planet["display_name"] for planet in ontology["planets"]],
-                supported_aspects=[aspect["display_name"] for aspect in ontology["aspects"]],
-                primary_input_resolution_status=primary_resolution,
-                secondary_input_resolution_status=secondary_resolution,
-                primary_resolved_timezone=primary_timezone,
-                secondary_resolved_timezone=secondary_timezone,
-                precision_mode=("exact" if request.primary_profile.time_precision == "exact" and request.secondary_profile.time_precision == "exact" else "planetary_fallback"),
-                primary_chart_data=primary_chart,
-                secondary_chart_data=secondary_chart,
-                inter_chart_aspects=inter_chart_aspects,
-                transit_timestamp=transit_timestamp,
-                transit_timezone=transit_timezone,
-                transit_location_status=transit_location_status,
-                transit_chart_data=transit_chart,
-                primary_transit_aspects=primary_transit_aspects,
-                secondary_transit_aspects=secondary_transit_aspects,
-                primary_annual_profection=primary_annual_profection,
-                secondary_annual_profection=secondary_annual_profection,
-                primary_solar_return=primary_solar_return,
-                secondary_solar_return=secondary_solar_return,
-                primary_solar_return_chart_data=primary_solar_return_chart_data,
-                secondary_solar_return_chart_data=secondary_solar_return_chart_data,
-                topic_judgments=topic_judgments,
-            ),
+            technical_summary=technical_summary,
             reading=reading,
             source_lenses=source_lenses,
             prediction_cards=prediction_cards,

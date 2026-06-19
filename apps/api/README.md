@@ -61,3 +61,24 @@ If no OpenAI key is configured, grounded chat still works, but it uses a local d
 3. Restart or redeploy the API
 
 With those env vars present, The Ark will retrieve grounded source passages locally and then ask the model to synthesize a more articulate astrologer-style answer from that context.
+
+## Core reading LLM synthesis
+
+The main natal, synastry, and daily-horoscope prose can also be synthesized by a cheaper OpenAI model while keeping the chart engine and traditional alignment document as the source of truth.
+
+### How it works
+
+- the chart engine still computes placements, transits, profections, topic judgments, and constraints locally
+- The Ark then sends that structured evidence plus the traditional alignment document to an OpenAI model
+- the model rewrites only the final prose layer; it does not replace the astrology calculation layer
+- if the model is unavailable, the API falls back to the deterministic reading engine automatically
+
+### Recommended low-cost setup
+
+1. Open `apps/api/.env`
+2. Set:
+   - `OPENAI_API_KEY=<your api key>`
+   - optional: `OPENAI_READING_MODEL=gpt-5-mini`
+   - optional: `OPENAI_READING_REASONING_EFFORT=low`
+   - optional: `OPENAI_READING_TIMEOUT_SECONDS=45`
+3. Restart or redeploy the API
