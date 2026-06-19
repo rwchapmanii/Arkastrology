@@ -1,5 +1,6 @@
 import {
   AccountProfileResponse,
+  AnalyticsEventResponse,
   AnyReadingResponse,
   DirectoryProfileListResponse,
   AuthSessionResponse,
@@ -202,6 +203,19 @@ export async function updateAccountProfile(
     method: 'PATCH',
     headers: buildHeaders(sessionToken),
     body: JSON.stringify(profile),
+  });
+}
+
+export async function trackAnalyticsEvent(
+  baseUrl: string,
+  eventName: string,
+  context: Record<string, unknown> = {},
+  sessionToken?: string,
+) {
+  return requestJson<AnalyticsEventResponse>(baseUrl, '/v1/analytics/events', {
+    method: 'POST',
+    headers: buildHeaders(sessionToken),
+    body: JSON.stringify({ event_name: eventName, context }),
   });
 }
 

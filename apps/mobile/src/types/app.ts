@@ -472,6 +472,12 @@ export type AccountProfileResponse = {
   profile: AccountProfile;
 };
 
+export type AnalyticsEventResponse = {
+  status: string;
+  event_id: string;
+  recorded_at: string;
+};
+
 export type DirectoryProfile = {
   profile_id: string;
   kind: 'user' | 'celebrity';

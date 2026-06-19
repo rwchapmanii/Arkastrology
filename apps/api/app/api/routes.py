@@ -4,6 +4,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Header, Query, Request
 from pydantic import BaseModel
 
+from app.models.analytics import AnalyticsEventRequest, AnalyticsEventResponse
 from app.models.auth import (
     AccountProfileResponse,
     AccountProfileUpdateRequest,
@@ -38,6 +39,7 @@ from app.models.social import (
     RelationshipListResponse,
 )
 from app.services.auth_service import AuthService
+from app.services.analytics_service import AnalyticsService
 from app.services.citation_service import CitationService
 from app.services.content_loader import load_ontology
 from app.services.natal_service import NatalReadingService
@@ -234,6 +236,15 @@ def update_account_reading(
     return ReadingHistoryService.update_reading(user_id, reading_id, request)
 
 
+@router.post("/v1/analytics/events", response_model=AnalyticsEventResponse)
+def record_analytics_event(
+    request: AnalyticsEventRequest,
+    authorization: Annotated[Optional[str], Header()] = None,
+) -> AnalyticsEventResponse:
+    user_id = AuthService.get_optional_user_id_for_session(authorization)
+    return AnalyticsService.record_event(request.event_name, request.context, user_id=user_id)
+
+
 @router.get("/v1/account/public-chart", response_model=PublicChartProfileResponse)
 def get_public_chart(authorization: Annotated[Optional[str], Header()] = None) -> PublicChartProfileResponse:
     user_id = AuthService.get_user_id_for_session(authorization)
@@ -261,7 +272,16 @@ def add_relationship(
     authorization: Annotated[Optional[str], Header()] = None,
 ) -> RelationshipListResponse:
     user_id = AuthService.get_user_id_for_session(authorization)
-    return RelationshipService.add_relationship(user_id, request)
+    response = RelationshipService.add_relationship(user_id, request)
+    AnalyticsService.record_event(
+        "relationship_added",
+        {
+            "profile_id": request.profile_id,
+            "relationship_count": len(response.items),
+        },
+        user_id=user_id,
+    )
+    return response
 
 
 @router.delete("/v1/account/relationships/{profile_id}", response_model=RelationshipListResponse)
@@ -270,7 +290,16 @@ def remove_relationship(
     authorization: Annotated[Optional[str], Header()] = None,
 ) -> RelationshipListResponse:
     user_id = AuthService.get_user_id_for_session(authorization)
-    return RelationshipService.remove_relationship(user_id, profile_id)
+    response = RelationshipService.remove_relationship(user_id, profile_id)
+    AnalyticsService.record_event(
+        "relationship_removed",
+        {
+            "profile_id": profile_id,
+            "relationship_count": len(response.items),
+        },
+        user_id=user_id,
+    )
+    return response
 
 
 @router.get("/v1/directory/profiles", response_model=DirectoryProfileListResponse)
@@ -280,7 +309,18 @@ def directory_profiles(
     authorization: Annotated[Optional[str], Header()] = None,
 ) -> DirectoryProfileListResponse:
     user_id = AuthService.get_user_id_for_session(authorization)
-    return RelationshipService.search_directory(user_id=user_id, query=query, limit=limit)
+    response = RelationshipService.search_directory(user_id=user_id, query=query, limit=limit)
+    AnalyticsService.record_event(
+        "directory_search",
+        {
+            "query": query.strip(),
+            "query_length": len(query.strip()),
+            "limit": limit,
+            "result_count": response.total,
+        },
+        user_id=user_id,
+    )
+    return response
 
 
 @router.post("/v1/places/resolve", response_model=PlaceResolveResponse)
@@ -297,6 +337,16 @@ def create_natal_reading(
     user_id = AuthService.get_optional_user_id_for_session(authorization)
     if user_id:
         ReadingHistoryService.record_reading(user_id, response.model_dump())
+    AnalyticsService.record_event(
+        "natal_reading_created",
+        {
+            "authenticated": bool(user_id),
+            "subject_name": request.profile.name,
+            "include_jungian": bool(request.include_jungian),
+            "include_red_book_prompts": bool(request.include_red_book_prompts),
+        },
+        user_id=user_id,
+    )
     return response
 
 
@@ -309,6 +359,17 @@ def create_synastry_reading(
     user_id = AuthService.get_optional_user_id_for_session(authorization)
     if user_id:
         ReadingHistoryService.record_reading(user_id, response.model_dump())
+    AnalyticsService.record_event(
+        "synastry_reading_created",
+        {
+            "authenticated": bool(user_id),
+            "primary_name": request.primary_profile.name,
+            "secondary_name": request.secondary_profile.name,
+            "include_jungian": bool(request.include_jungian),
+            "include_red_book_prompts": bool(request.include_red_book_prompts),
+        },
+        user_id=user_id,
+    )
     return response
 
 

@@ -91,6 +91,18 @@ export function useReadingHistory(authState: AuthState) {
     return response.item;
   }
 
+  async function loadLatestHistoryItem(chartType: 'natal' | 'synastry' = 'natal', apiBaseUrl?: string) {
+    if (authState.mode !== 'authenticated' || !authState.token || !(apiBaseUrl || authState.apiBaseUrl)) {
+      return null;
+    }
+    const response = await fetchReadingHistory(apiBaseUrl || authState.apiBaseUrl || '', authState.token, {
+      chartType,
+      offset: 0,
+      limit: 1,
+    });
+    return response.items[0] ?? null;
+  }
+
   async function saveHistoryMetadata(readingId: string, updates: { favorite?: boolean; tags?: string[] }, apiBaseUrl?: string) {
     if (authState.mode !== 'authenticated' || !authState.token || !(apiBaseUrl || authState.apiBaseUrl)) {
       throw new Error('Sign in to update reading history metadata.');
@@ -147,6 +159,7 @@ export function useReadingHistory(authState: AuthState) {
     refreshHistory,
     loadMoreHistory,
     loadHistoryItem,
+    loadLatestHistoryItem,
     saveHistoryMetadata,
   };
 }

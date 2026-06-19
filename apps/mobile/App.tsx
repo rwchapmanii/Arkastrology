@@ -10,6 +10,7 @@ import { useAuthSession } from './src/hooks/useAuthSession';
 import { useReadingHistory } from './src/hooks/useReadingHistory';
 import { useRelationshipDirectory } from './src/hooks/useRelationshipDirectory';
 import { useReadingWorkspace } from './src/hooks/useReadingWorkspace';
+import { trackAnalyticsEvent } from './src/services/api';
 import { AccountScreen } from './src/screens/AccountScreen';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { DetailScreen } from './src/screens/DetailScreen';
@@ -50,6 +51,8 @@ export default function App() {
   const [verificationTokenDraft, setVerificationTokenDraft] = useState('');
   const [resetTokenDraft, setResetTokenDraft] = useState('');
   const [newPasswordDraft, setNewPasswordDraft] = useState('');
+  const [restoringSavedNatal, setRestoringSavedNatal] = useState(false);
+  const [savedLandingKey, setSavedLandingKey] = useState<string | null>(null);
 
   const combinedMessage = useMemo(
     () => restoreError || workspace.error || readingHistory.historyError || accountProfile.profileError || relationshipDirectory.directoryError || workspace.saveMessage,
@@ -58,21 +61,87 @@ export default function App() {
   const isError = Boolean(restoreError || workspace.error || readingHistory.historyError || accountProfile.profileError || relationshipDirectory.directoryError);
 
   useEffect(() => {
+    if (authState.mode === 'signed_out') {
+      setSavedLandingKey(null);
+      setRestoringSavedNatal(false);
+    }
+  }, [authState.mode]);
+
+  useEffect(() => {
     if (!authReady || !workspace.draftLoaded) return;
     if (authState.mode === 'signed_out') {
       setScreenMode('auth');
       return;
     }
     workspace.applyAccountPreferences(authState.preferences);
-    setScreenMode(workspace.result ? 'reading' : 'onboarding');
+    if (workspace.result) {
+      setScreenMode('reading');
+      return;
+    }
+
+    if (authState.mode === 'authenticated') {
+      const landingKey = `${authState.userId || authState.email || 'account'}:${workspace.draft.apiBaseUrl}`;
+      if (savedLandingKey !== landingKey && !restoringSavedNatal) {
+        setSavedLandingKey(landingKey);
+        setRestoringSavedNatal(true);
+        void readingHistory.loadLatestHistoryItem('natal', workspace.draft.apiBaseUrl).then((item) => {
+          if (!item) {
+            setScreenMode('onboarding');
+            return;
+          }
+          workspace.setResultFromHistory(item.reading_payload);
+          setScreenMode('reading');
+          return trackAnalyticsEvent(
+            workspace.draft.apiBaseUrl,
+            'saved_natal_restored',
+            {
+              reading_id: item.id,
+              chart_type: item.chart_type,
+              source: 'session_restore',
+            },
+            authState.token,
+          ).catch(() => null);
+        }).catch(() => {
+          setScreenMode('onboarding');
+        }).finally(() => {
+          setRestoringSavedNatal(false);
+        });
+        return;
+      }
+      if (restoringSavedNatal) {
+        return;
+      }
+    }
+
+    setScreenMode('onboarding');
   }, [
     authReady,
     workspace.draftLoaded,
     workspace.result,
     authState.mode,
+    authState.userId,
+    authState.email,
+    authState.token,
+    workspace.draft.apiBaseUrl,
     authState.preferences.include_jungian_default,
     authState.preferences.include_red_book_prompts_default,
+    readingHistory,
+    restoringSavedNatal,
+    savedLandingKey,
   ]);
+
+  async function recordUiEvent(eventName: string, context: Record<string, unknown>) {
+    try {
+      await trackAnalyticsEvent(
+        workspace.draft.apiBaseUrl,
+        eventName,
+        context,
+        authState.mode === 'authenticated' ? authState.token : undefined,
+      );
+    } catch {
+      // Do not block the primary user flow on analytics.
+    }
+  }
 
   function dismissNotice() {
     if (restoreError) clearRestoreError();
@@ -137,10 +206,15 @@ export default function App() {
 
   async function handleGenerateReading() {
     try {
-      await workspace.generateReading();
+      const reading = await workspace.generateReading();
       if (authState.mode === 'authenticated') {
         await readingHistory.refreshHistory({ apiBaseUrl: workspace.draft.apiBaseUrl }).catch(() => []);
       }
+      await recordUiEvent('reading_rendered', {
+        chart_type: reading.chart_type,
+        mode: authState.mode,
+        has_daily_horoscope: Boolean(reading.daily_horoscope),
+      });
       setScreenMode('reading');
     } catch {
       // Error already surfaced through the workspace state.
@@ -160,7 +234,11 @@ export default function App() {
 
   async function handleSearchDirectory() {
     try {
-      await relationshipDirectory.searchDirectory(workspace.draft.apiBaseUrl);
+      const results = await relationshipDirectory.searchDirectory(workspace.draft.apiBaseUrl);
+      await recordUiEvent('directory_results_viewed', {
+        query: relationshipDirectory.query.trim(),
+        result_count: results.length,
+      });
       workspace.setSaveMessage('Directory refreshed.');
       workspace.setError(null);
     } catch (err) {
@@ -187,6 +265,7 @@ export default function App() {
   async function handleAddRelationship(profileId: string) {
     try {
       await relationshipDirectory.addRelationshipEntry(profileId, workspace.draft.apiBaseUrl);
+      await recordUiEvent('relationship_added_ui', { profile_id: profileId });
       workspace.setSaveMessage('Relationship added.');
       workspace.setError(null);
     } catch (err) {
@@ -197,6 +276,7 @@ export default function App() {
   async function handleRemoveRelationship(profileId: string) {
     try {
       await relationshipDirectory.removeRelationshipEntry(profileId, workspace.draft.apiBaseUrl);
+      await recordUiEvent('relationship_removed_ui', { profile_id: profileId });
       workspace.setSaveMessage('Relationship removed.');
       workspace.setError(null);
     } catch (err) {
@@ -361,6 +441,11 @@ export default function App() {
             void readingHistory.loadHistoryItem(item.id, workspace.draft.apiBaseUrl).then((loaded) => {
               if (loaded) {
                 workspace.setResultFromHistory(loaded.reading_payload);
+                void recordUiEvent('saved_reading_opened', {
+                  reading_id: item.id,
+                  chart_type: item.chart_type,
+                  opened_from: 'history',
+                });
                 setScreenMode('reading');
               }
             }).catch((err) => {
