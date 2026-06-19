@@ -27,6 +27,17 @@ function normalizeBaseUrl(baseUrl: string) {
   return baseUrl.trim().replace(/\/$/, '');
 }
 
+function getBaseUrlCandidates(baseUrl: string) {
+  const normalized = normalizeBaseUrl(baseUrl);
+  const candidates = [normalized];
+
+  if (normalized === 'https://api.arkastrology.app') {
+    candidates.push('https://arkastrology.onrender.com');
+  }
+
+  return candidates;
+}
+
 async function readError(response: Response) {
   try {
     const data = (await response.json()) as { detail?: string };
@@ -37,18 +48,31 @@ async function readError(response: Response) {
 }
 
 async function requestJson<T>(baseUrl: string, path: string, init: RequestInit = {}) {
-  const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
-  let response: Response;
-  try {
-    response = await fetch(`${normalizedBaseUrl}${path}`, init);
-  } catch (error) {
-    const reason = error instanceof Error && error.message ? error.message : 'Network request failed.';
-    throw new Error(`Could not reach The Ark API at ${normalizedBaseUrl}. Make sure the local API server is running. ${reason}`);
+  const candidates = getBaseUrlCandidates(baseUrl);
+  let lastNetworkError: string | null = null;
+
+  for (let index = 0; index < candidates.length; index += 1) {
+    const candidate = candidates[index];
+    let response: Response;
+    try {
+      response = await fetch(`${candidate}${path}`, init);
+    } catch (error) {
+      lastNetworkError = error instanceof Error && error.message ? error.message : 'Network request failed.';
+      const hasFallback = index < candidates.length - 1;
+      if (hasFallback) {
+        continue;
+      }
+      throw new Error(`Could not reach The Ark API at ${candidate}. ${lastNetworkError}`);
+    }
+
+    if (!response.ok) {
+      throw new Error(await readError(response));
+    }
+
+    return (await response.json()) as T;
   }
-  if (!response.ok) {
-    throw new Error(await readError(response));
-  }
-  return (await response.json()) as T;
+
+  throw new Error(lastNetworkError || 'Could not reach The Ark API.');
 }
 
 function buildPersonPayload(person: PersonDraft) {
