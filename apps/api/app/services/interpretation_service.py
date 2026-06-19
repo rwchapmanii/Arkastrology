@@ -262,11 +262,17 @@ class NatalInterpretationService:
         return "mixed"
 
     @staticmethod
-    def _confidence_label(evidence_count: int, activation_score: int, support_score: int, strain_score: int) -> str:
-        contradiction = support_score > 0 and strain_score > 0
-        if evidence_count >= 4 and max(activation_score, support_score, strain_score) >= 3 and not contradiction:
+    def _confidence_label(evidence_items: List[EvidenceItem], activation_score: int, support_score: int, strain_score: int) -> str:
+        major = [item for item in evidence_items if (item.weight or 0) >= 2]
+        support = sum(1 for item in major if item.polarity == "support")
+        strain = sum(1 for item in major if item.polarity == "strain")
+        activation = sum(1 for item in major if item.polarity == "activation")
+        contradiction = support > 0 and strain > 0
+        if len(major) >= 3 and not contradiction and max(activation_score, support_score, strain_score) >= 3:
             return "high"
-        if evidence_count >= 2:
+        if len(major) >= 2:
+            return "medium"
+        if activation >= 2 and support == 0 and strain == 0:
             return "medium"
         return "low"
 
@@ -291,6 +297,115 @@ class NatalInterpretationService:
         if label == "low":
             return "Low confidence means the chart offers a clue, but the testimony is still thin or divided."
         return None
+
+    @staticmethod
+    def _axis_label(first_house: Optional[str], second_house: Optional[str]) -> Optional[str]:
+        if not first_house or not second_house:
+            return None
+        try:
+            first = int(str(first_house).replace("House", ""))
+            second = int(str(second_house).replace("House", ""))
+        except ValueError:
+            return None
+        axis_labels = {
+            frozenset({1, 7}): "self/other, identity/relationship, presentation/agreement",
+            frozenset({2, 8}): "personal resources/shared resources, self-reliance/dependency, ownership/obligation",
+            frozenset({3, 9}): "local knowledge/larger worldview, daily facts/bigger meaning",
+            frozenset({4, 10}): "public/private, career/home, reputation/foundations",
+            frozenset({5, 11}): "personal joy/collective hopes, children or creativity/friends or audience",
+            frozenset({6, 12}): "visible labor/hidden burden, maintenance/retreat, duty/isolation",
+        }
+        return axis_labels.get(frozenset({first, second}))
+
+    @staticmethod
+    def _bucket_evidence_items(evidence_items: List[EvidenceItem]) -> Tuple[List[EvidenceItem], List[EvidenceItem], List[EvidenceItem]]:
+        supporting = [item for item in evidence_items if item.polarity == "support"]
+        challenging = [item for item in evidence_items if item.polarity == "strain"]
+        activating = [item for item in evidence_items if item.polarity == "activation"]
+        return supporting, challenging, activating
+
+    @classmethod
+    def _build_topic_synthesis(
+        cls,
+        title: str,
+        classification: str,
+        support_score: int,
+        strain_score: int,
+        activation_score: int,
+        supporting: List[EvidenceItem],
+        challenging: List[EvidenceItem],
+        activating: List[EvidenceItem],
+    ) -> str:
+        if classification == "supportive":
+            because = supporting[0].interpretation if supporting else "repeated support is visible in the testimony"
+            return f"{title} is judged supportive because {because[:1].lower() + because[1:]}."
+        if classification == "difficult":
+            because = challenging[0].interpretation if challenging else "repeated strain is visible in the testimony"
+            return f"{title} is judged difficult because {because[:1].lower() + because[1:]}."
+        if classification == "emphasized":
+            because = activating[0].interpretation if activating else "the chart keeps routing attention here"
+            return (
+                f"{title} is highly activated and consequential. "
+                f"It is louder because {because[:1].lower() + because[1:]}, but louder is not the same thing as purely positive or purely negative."
+            )
+        if support_score > strain_score and supporting:
+            return (
+                f"{title} is mixed, leaning supportive. "
+                f"The chart gives real help here, but activation and pressure still make the topic consequential."
+            )
+        if strain_score > support_score and challenging:
+            return (
+                f"{title} is mixed, leaning strained. "
+                f"The topic is not unsupported, but it does need more realism, pacing, and care than an easy area would."
+            )
+        return (
+            f"{title} shows mixed testimony. "
+            f"The chart gives both support and friction here, and activation keeps the topic important even when the signal is not one-sided."
+        )
+
+    @classmethod
+    def _validate_topic_judgment(
+        cls,
+        title: str,
+        classification: str,
+        confidence: str,
+        support_score: int,
+        strain_score: int,
+        activation_score: int,
+        supporting: List[EvidenceItem],
+        challenging: List[EvidenceItem],
+        activating: List[EvidenceItem],
+    ) -> Tuple[str, str, List[str]]:
+        validation_notes: List[str] = []
+        next_classification = classification
+        next_confidence = confidence
+
+        if next_classification == "difficult" and support_score >= strain_score:
+            next_classification = "mixed"
+            validation_notes.append(
+                f"{title} was softened from difficult to mixed because support evidence is not weaker than strain evidence."
+            )
+        if next_classification == "supportive" and strain_score >= support_score:
+            next_classification = "mixed"
+            validation_notes.append(
+                f"{title} was softened from supportive to mixed because strain evidence is not weaker than support evidence."
+            )
+        if next_classification == "emphasized" and activation_score < 2:
+            next_classification = "mixed"
+            validation_notes.append(
+                f"{title} was softened from emphasized to mixed because the activation testimony is still too thin."
+            )
+        if next_confidence == "high":
+            major_support = sum(1 for item in supporting if (item.weight or 0) >= 2)
+            major_strain = sum(1 for item in challenging if (item.weight or 0) >= 2)
+            major_activation = sum(1 for item in activating if (item.weight or 0) >= 2)
+            contradiction = major_support > 0 and major_strain > 0
+            if contradiction or (major_support + major_strain + major_activation) < 3:
+                next_confidence = "medium"
+                validation_notes.append(
+                    f"{title} confidence was reduced to medium because repeated aligned testimony was not strong enough for high confidence."
+                )
+        return next_classification, next_confidence, validation_notes
 
     @staticmethod
     def _planet_topic_role(planet_name: str) -> str:
@@ -815,9 +930,29 @@ class NatalInterpretationService:
             topic_citations.add("traditional_maltreatment_bonification")
 
         classification = cls._topic_score_bucket(score, activation_score, support_score, strain_score)
-        if classification == "difficult" and support_score >= strain_score:
-            classification = "mixed"
-        confidence = cls._confidence_label(len(evidence_items), activation_score, support_score, strain_score)
+        supporting_evidence, challenging_evidence, activating_evidence = cls._bucket_evidence_items(evidence_items)
+        confidence = cls._confidence_label(evidence_items, activation_score, support_score, strain_score)
+        classification, confidence, validation_notes = cls._validate_topic_judgment(
+            config["title"],
+            classification,
+            confidence,
+            support_score,
+            strain_score,
+            activation_score,
+            supporting_evidence,
+            challenging_evidence,
+            activating_evidence,
+        )
+        synthesis = cls._build_topic_synthesis(
+            config["title"],
+            classification,
+            support_score,
+            strain_score,
+            activation_score,
+            supporting_evidence,
+            challenging_evidence,
+            activating_evidence,
+        )
         return TopicJudgmentRecord(
             key=config["key"],
             title=config["title"],
@@ -830,6 +965,11 @@ class NatalInterpretationService:
             relevant_houses=list(config["house_numbers"]),
             relevant_lot=config.get("lot"),
             evidence_items=evidence_items,
+            supporting_evidence=supporting_evidence,
+            challenging_evidence=challenging_evidence,
+            activating_evidence=activating_evidence,
+            synthesis=synthesis,
+            validation_notes=validation_notes,
             citations=cls._resolve_labels(sorted(topic_citations)),
         )
 
@@ -838,14 +978,42 @@ class NatalInterpretationService:
         return [cls._topic_judgment_data(chart_data, ontology, config) for config in cls.TOPIC_CONFIGS]
 
     @classmethod
-    def _fortune_spirit_alignment(cls, chart_data: NatalTechnicalChart, ontology: Dict) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    def _annual_pattern_summaries(
+        cls,
+        chart_data: NatalTechnicalChart,
+        ontology: Dict,
+        annual_profection: Optional[AnnualProfectionRecord],
+        solar_return: Optional[SolarReturnRecord],
+    ) -> List[str]:
+        patterns: List[str] = []
+        if annual_profection and annual_profection.lord_of_year_house:
+            activated_house_title = cls._house_title_for_id(ontology, cls._house_id_from_number(annual_profection.activated_house))
+            lord_house_title = cls._house_title_for_id(ontology, annual_profection.lord_of_year_house)
+            patterns.append(
+                f"The {activated_house_title.lower()} profection is routed through natal {annual_profection.lord_of_year} in the natal {lord_house_title.lower()}, so the yearly topics become visible through that natal house."
+            )
+        if annual_profection and solar_return and solar_return.year_lord_house and annual_profection.lord_of_year_house:
+            natal_house_title = cls._house_title_for_id(ontology, annual_profection.lord_of_year_house)
+            return_house_title = cls._house_title_for_id(ontology, solar_return.year_lord_house)
+            patterns.append(
+                f"Natal {annual_profection.lord_of_year} carries the year from the natal {natal_house_title.lower()}, while the solar-return year lord lands in the solar-return {return_house_title.lower()}."
+            )
+        if solar_return and solar_return.return_ascendant_sign and solar_return.sun_house:
+            patterns.append(
+                f"The solar return rises in {solar_return.return_ascendant_sign}, while the return Sun falls in the solar-return {cls._house_title_for_id(ontology, solar_return.sun_house).lower()}, making the yearly atmosphere concrete there."
+            )
+        return patterns[:3]
+
+    @classmethod
+    def _fortune_spirit_alignment(cls, chart_data: NatalTechnicalChart, ontology: Dict) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
         context = chart_data.traditional_context
         if not context or not context.fortune or not context.spirit:
-            return None, None, None
+            return None, None, None, None
         fortune_house_title = cls._house_title_for_id(ontology, context.fortune.house)
         spirit_house_title = cls._house_title_for_id(ontology, context.spirit.house)
         fortune_house_meta = cls._house_meta(ontology, cls._house_number(context.fortune.house)) if context.fortune.house else {}
         spirit_house_meta = cls._house_meta(ontology, cls._house_number(context.spirit.house)) if context.spirit.house else {}
+        axis_label = cls._axis_label(context.fortune.house, context.spirit.house)
         fortune_text = (
             f"Fortune in {fortune_house_title} points circumstances toward "
             f"{cls._topic_phrase(fortune_house_meta.get('classical_topics', []) or fortune_house_meta.get('modern_topics', []), 3)}."
@@ -855,8 +1023,8 @@ class NatalInterpretationService:
             f"{cls._topic_phrase(spirit_house_meta.get('classical_topics', []) or spirit_house_meta.get('modern_topics', []), 3)}."
         )
         if context.fortune.house == context.spirit.house or context.fortune.ruler == context.spirit.ruler:
-            return "aligned", fortune_text, spirit_text
-        return "split", fortune_text, spirit_text
+            return "aligned", fortune_text, spirit_text, axis_label
+        return "split", fortune_text, spirit_text, axis_label
 
     @classmethod
     def build_year_map_record(
@@ -868,7 +1036,7 @@ class NatalInterpretationService:
     ) -> Optional[YearMapRecord]:
         if not annual_profection and not solar_return:
             return None
-        alignment, fortune_text, spirit_text = cls._fortune_spirit_alignment(chart_data, ontology)
+        alignment, fortune_text, spirit_text, axis_label = cls._fortune_spirit_alignment(chart_data, ontology)
         activated_house_title = None
         activated_topics: List[str] = []
         profection_window = None
@@ -906,6 +1074,8 @@ class NatalInterpretationService:
             guidance_parts.append(
                 "Circumstance and intention are pointing in a similar direction, so repeated themes should be taken seriously."
             )
+        if axis_label:
+            guidance_parts.append(f"Read Fortune and Spirit across the {axis_label} axis rather than as unrelated statements.")
         return YearMapRecord(
             activated_house=annual_profection.activated_house if annual_profection else None,
             activated_house_title=activated_house_title,
@@ -921,6 +1091,8 @@ class NatalInterpretationService:
             fortune_emphasis=fortune_text,
             spirit_emphasis=spirit_text,
             fortune_spirit_alignment=alignment,
+            fortune_spirit_axis=axis_label,
+            annual_patterns=cls._annual_pattern_summaries(chart_data, ontology, annual_profection, solar_return),
             guidance=" ".join(guidance_parts) if guidance_parts else None,
         )
 
@@ -949,7 +1121,10 @@ class NatalInterpretationService:
         if year_map.fortune_spirit_alignment == "aligned":
             summary_bits.append("Fortune and Spirit are aligned, so circumstance and intention are pointing in a similar direction.")
         elif year_map.fortune_spirit_alignment == "split":
-            summary_bits.append("Fortune and Spirit are split across a real axis, so what life is demanding and what you most want to pursue may need conscious coordination rather than being assumed to match.")
+            axis_text = f" across the {year_map.fortune_spirit_axis} axis" if year_map.fortune_spirit_axis else " across a real axis"
+            summary_bits.append(f"Fortune and Spirit are split{axis_text}, so what life is demanding and what you most want to pursue may need conscious coordination rather than being assumed to match.")
+        if year_map.annual_patterns:
+            summary_bits.extend(year_map.annual_patterns[:2])
         plain_meaning = " ".join(summary_bits)
         doctrine_bits = []
         if year_map.activated_house_title:
@@ -964,19 +1139,19 @@ class NatalInterpretationService:
             doctrine_bits.append(
                 "Fortune speaks to circumstance and embodiment, while Spirit speaks to chosen direction and intention."
             )
-            evidence_items = [
-                cls._evidence_item(
-                    observation=(
-                        f"The profection activates {year_map.activated_house_title or 'the live house'}"
-                        + (f" from {year_map.profection_window}." if year_map.profection_window else ".")
-                    ),
-                    rule="Annual profection sets the primary house and year lord for the current cycle.",
-                    interpretation="This identifies the main life area that keeps repeating this year.",
-                    score=1,
-                    polarity="activation",
-                    chart_context="annual_profection",
-                )
-            ]
+        evidence_items = [
+            cls._evidence_item(
+                observation=(
+                    f"The profection activates {year_map.activated_house_title or 'the live house'}"
+                    + (f" from {year_map.profection_window}." if year_map.profection_window else ".")
+                ),
+                rule="Annual profection sets the primary house and year lord for the current cycle.",
+                interpretation="This identifies the main life area that keeps repeating this year.",
+                score=1,
+                polarity="activation",
+                chart_context="annual_profection",
+            )
+        ]
         if year_map.solar_return_ascendant:
             evidence_items.append(
                 cls._evidence_item(
@@ -1006,6 +1181,17 @@ class NatalInterpretationService:
                     chart_context="fortune_spirit",
                 )
             )
+        for pattern in year_map.annual_patterns[:2]:
+            evidence_items.append(
+                cls._evidence_item(
+                    observation=pattern,
+                    rule="Repeated links across natal, profection, and solar-return layers deserve more weight than one isolated chart statement.",
+                    interpretation="This repeated pattern should guide the synthesis before any single dramatic phrase.",
+                    score=1,
+                    polarity="activation",
+                    chart_context="annual_profection",
+                )
+            )
         return InterpretationBlock(
             block_type="year_map",
             title="Current year map",
@@ -1026,6 +1212,8 @@ class NatalInterpretationService:
                     f"Lord of the year: {year_map.lord_of_year} in {cls._house_title_for_id(ontology, year_map.lord_of_year_house)}" if year_map.lord_of_year else None,
                     f"Solar return ascendant: {year_map.solar_return_ascendant}" if year_map.solar_return_ascendant else None,
                     f"Fortune and Spirit: {year_map.fortune_spirit_alignment}" if year_map.fortune_spirit_alignment else None,
+                    f"Axis: {year_map.fortune_spirit_axis}" if year_map.fortune_spirit_axis else None,
+                    f"Pattern: {year_map.annual_patterns[0]}" if year_map.annual_patterns else None,
                 ] if line
             ],
             why_this_matters="This gives the main timing frame, so the rest of the reading should be understood as variations on this yearly pattern.",
@@ -1098,11 +1286,11 @@ class NatalInterpretationService:
             return None
         fortune_house = cls._house_meta(ontology, cls._house_number(context.fortune.house)) if context.fortune.house else {}
         spirit_house = cls._house_meta(ontology, cls._house_number(context.spirit.house)) if context.spirit.house else {}
-        alignment, fortune_text, spirit_text = cls._fortune_spirit_alignment(chart_data, ontology)
+        alignment, fortune_text, spirit_text, axis_label = cls._fortune_spirit_alignment(chart_data, ontology)
         alignment_sentence = (
             "Fortune and Spirit are aligned here, so circumstance and intention tend to reinforce each other."
             if alignment == "aligned" else
-            "Fortune and Spirit are split here, so what happens around the body and circumstances may not match what the person most intentionally wants to pursue."
+            f"Fortune and Spirit are split here{f' across the {axis_label} axis' if axis_label else ''}, so what happens around the body and circumstances may not match what the person most intentionally wants to pursue."
         )
         plain_meaning = (
             f"Fortune and Spirit tell two related but different stories. Fortune falls in {context.fortune.sign} {cls._title_from_house(fortune_house, context.fortune.house or 'its house')}, so circumstances gather around {cls._topic_phrase(fortune_house.get('classical_topics', []) or fortune_house.get('modern_topics', []), 3)}. "
@@ -1287,17 +1475,15 @@ class NatalInterpretationService:
     def _build_topic_judgment_blocks(cls, chart_data: NatalTechnicalChart, ontology: Dict) -> List[InterpretationBlock]:
         blocks: List[InterpretationBlock] = []
         for data in cls.build_topic_judgments(chart_data, ontology):
-            if data.classification == "supportive":
-                opening = "The chart gives clear support here."
-            elif data.classification == "difficult":
-                opening = "This is the area asking for the most care."
-            else:
-                opening = "The testimony here is mixed."
-            summary = opening + " " + " ".join(
-                f"{item.interpretation[:1].upper() + item.interpretation[1:]}"
-                + ("" if item.interpretation.endswith(".") else ".")
-                for item in data.evidence_items[:3]
-            )
+            summary = data.synthesis or "The testimony here is mixed."
+            support_lines = [item.observation for item in data.supporting_evidence[:2]]
+            challenge_lines = [item.observation for item in data.challenging_evidence[:2]]
+            activation_lines = [item.observation for item in data.activating_evidence[:1]]
+            chart_evidence = [
+                *([f"Supporting testimony: {line}" for line in support_lines] or []),
+                *([f"Challenging testimony: {line}" for line in challenge_lines] or []),
+                *([f"Activation testimony: {line}" for line in activation_lines] or []),
+            ] or [item.observation for item in data.evidence_items[:3]]
             blocks.append(
                 InterpretationBlock(
                     block_type="topic_judgment",
@@ -1307,11 +1493,11 @@ class NatalInterpretationService:
                     topic_key=data.key,
                     confidence=data.confidence,
                     evidence_items=data.evidence_items,
-                    caveats=[item.caveat for item in data.evidence_items if item.caveat][:3],
+                    caveats=[*data.validation_notes[:2], *[item.caveat for item in data.evidence_items if item.caveat][:2]][:4],
                     plain_meaning=summary,
                     traditional_doctrine="Topical judgment weighs the house, its ruler, occupants, witnesses, lots, and repeated testimony rather than relying on one placement in isolation.",
-                    chart_evidence=[item.observation for item in data.evidence_items[:3]],
-                    life_translation="This is where the chart is showing repeated support, repeated pressure, or a genuine mix of both.",
+                    chart_evidence=chart_evidence,
+                    life_translation=data.synthesis or "This is where the chart is showing repeated support, repeated pressure, or a genuine mix of both.",
                     why_this_matters="Topical judgment tells you where the chart gives the clearest encouragement and where it asks for realism, patience, or repair.",
                     confidence_explainer=cls._confidence_explainer(data.confidence, data.classification),
                     technical_terms=["mixed testimony", "bonification", "maltreatment"],
@@ -1835,13 +2021,13 @@ class NatalInterpretationService:
                     "Track the house of the year lord whenever a major event lands.",
                 ]
 
-            alignment, fortune_text, spirit_text = cls._fortune_spirit_alignment(chart_data, ontology)
+            alignment, fortune_text, spirit_text, axis_label = cls._fortune_spirit_alignment(chart_data, ontology)
             fortune_summary = (
                 f"{fortune_text} {spirit_text} "
                 + (
                     "Fortune and Spirit are reinforcing each other, so circumstance and intention are telling a similar story."
                     if alignment == "aligned" else
-                    "Fortune and Spirit are split, so the most available path may not be the most intentional one."
+                    f"Fortune and Spirit are split{f' across the {axis_label} axis' if axis_label else ''}, so the most available path may not be the most intentional one."
                 )
                 if fortune_text and spirit_text else
                 "Fortune and Spirit are not available yet."

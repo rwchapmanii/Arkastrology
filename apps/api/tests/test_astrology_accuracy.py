@@ -221,6 +221,9 @@ class AstrologyAccuracyTests(unittest.TestCase):
         self.assertEqual(response.prediction_cards[0].title, "Current year map")
         self.assertEqual(response.prediction_cards[1].title, "How Fortune and Spirit divide the story")
         self.assertEqual(response.technical_summary.year_map.fortune_spirit_alignment, "split")
+        self.assertTrue(response.technical_summary.year_map.annual_patterns)
+        if response.technical_summary.year_map.fortune_spirit_axis is not None:
+            self.assertIsInstance(response.technical_summary.year_map.fortune_spirit_axis, str)
         year_map_block = next(block for block in response.interpretation_blocks if block.block_type == "year_map")
         self.assertIn("natal", year_map_block.summary.lower())
         self.assertIn("solar return", year_map_block.summary.lower())
@@ -259,6 +262,10 @@ class AstrologyAccuracyTests(unittest.TestCase):
         self.assertIsNotNone(first_evidence.weight)
         self.assertGreaterEqual(first_evidence.weight, 1)
         self.assertIn(first_evidence.chart_context, {"natal", "annual_profection", "solar_return", "fortune_spirit", "transit"})
+        self.assertIsNotNone(first_topic.synthesis)
+        self.assertIsInstance(first_topic.supporting_evidence, list)
+        self.assertIsInstance(first_topic.challenging_evidence, list)
+        self.assertIsInstance(first_topic.activating_evidence, list)
 
     def test_synastry_unknown_time_uses_planetary_fallback(self):
         primary = self.build_profile(name="Person A")

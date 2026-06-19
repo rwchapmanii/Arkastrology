@@ -127,6 +127,7 @@ function confidenceExplainer(topic?: TopicJudgmentRecord | null) {
 
 function topicSummary(topic?: TopicJudgmentRecord | null) {
   if (!topic) return null;
+  if (topic.synthesis) return topic.synthesis;
   if (topic.classification === 'emphasized') {
     return `${topic.title} is highly activated right now. The chart is drawing repeated attention here, but activation alone is not the same thing as damage or ease.`;
   }
@@ -163,10 +164,11 @@ function buildOpeningSummary(result: AnyReadingResponse, strongest?: TopicJudgme
       ? `Natal ${yearMap.lord_of_year} carries the year from the natal ${formatHouseRef(yearMap.lord_of_year_house).toLowerCase()}, so that part of life becomes the place where the annual storyline is most likely to become visible, manageable, or meaningful.`
       : null,
     yearMap.fortune_spirit_alignment === 'split'
-      ? 'Fortune and Spirit are split across a real axis in the chart, which means circumstances and chosen direction may not be telling the same story. What life demands materially may differ from what you most want to pursue intentionally, especially across the public/private axis.'
+      ? `Fortune and Spirit are split across ${yearMap.fortune_spirit_axis || 'a real axis'} in the chart, which means circumstances and chosen direction may not be telling the same story. What life demands materially may differ from what you most want to pursue intentionally.`
       : yearMap.fortune_spirit_alignment === 'aligned'
         ? 'Fortune and Spirit are aligned, so circumstances and chosen direction are reinforcing each other more than usual.'
         : null,
+    yearMap.annual_patterns?.[0] || null,
     strongest && strained
       ? `The chart looks most supportive around ${strongest.title.toLowerCase()} and most pressured around ${strained.title.toLowerCase()}, so the year is not flat. It has clear areas of help, clear areas asking for care, and some areas that are simply louder rather than purely positive or negative.`
       : null,

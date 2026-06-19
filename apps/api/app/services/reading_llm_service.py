@@ -210,9 +210,9 @@ def _time_scale(transit_body: Any) -> str:
 
 def _topic_judgment_brief(topic: dict[str, Any]) -> dict[str, Any]:
     evidence_items = topic.get("evidence_items") or []
-    support = [item for item in evidence_items if item.get("polarity") == "support"][:3]
-    strain = [item for item in evidence_items if item.get("polarity") == "strain"][:3]
-    activation = [item for item in evidence_items if item.get("polarity") == "activation"][:3]
+    support = (topic.get("supporting_evidence") or [item for item in evidence_items if item.get("polarity") == "support"])[:3]
+    strain = (topic.get("challenging_evidence") or [item for item in evidence_items if item.get("polarity") == "strain"])[:3]
+    activation = (topic.get("activating_evidence") or [item for item in evidence_items if item.get("polarity") == "activation"])[:3]
     mixed = [item for item in evidence_items if item.get("polarity") == "mixed"][:2]
     support_score = int(topic.get("support_score") or 0)
     strain_score = int(topic.get("strain_score") or 0)
@@ -231,6 +231,8 @@ def _topic_judgment_brief(topic: dict[str, Any]) -> dict[str, Any]:
         "challenging_testimony": [_clean_context_text(item.get("observation")) for item in strain],
         "activation_testimony": [_clean_context_text(item.get("observation")) for item in activation],
         "mixed_testimony": [_clean_context_text(item.get("observation")) for item in mixed],
+        "backend_synthesis": _clean_context_text(topic.get("synthesis")),
+        "backend_validation_notes": _clean_context_text(topic.get("validation_notes") or []),
         "llm_guardrail": (
             "Treat this topic as clearly activated but not purely positive or purely negative."
             if label == "emphasized" else

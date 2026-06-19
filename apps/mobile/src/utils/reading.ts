@@ -1,5 +1,5 @@
 import { GLOSSARY_BY_TERM } from '../content/glossary';
-import { AnyReadingResponse, InterpretationBlock, ReadingHistoryDetailResponse, ReadingHistoryListResponse } from '../types/app';
+import { AnyReadingResponse, EvidenceItem, InterpretationBlock, ReadingHistoryDetailResponse, ReadingHistoryListResponse } from '../types/app';
 
 const TEXT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/worked through through/gi, 'worked through'],
@@ -50,6 +50,18 @@ function cleanSourceLabel(value: string) {
   return cleaned;
 }
 
+function sanitizeEvidenceItem(item: EvidenceItem): EvidenceItem {
+  return {
+    ...item,
+    observation: cleanString(item.observation) || item.observation,
+    rule: cleanString(item.rule) || item.rule,
+    interpretation: cleanString(item.interpretation) || item.interpretation,
+    caveat: cleanString(item.caveat),
+    polarity: cleanString(item.polarity),
+    chart_context: cleanString(item.chart_context),
+  };
+}
+
 function sanitizeBlock(block: InterpretationBlock): InterpretationBlock {
   return {
     ...block,
@@ -65,15 +77,7 @@ function sanitizeBlock(block: InterpretationBlock): InterpretationBlock {
     confidence_explainer: cleanString(block.confidence_explainer),
     caveat: cleanString(block.caveat),
     source_tags: (block.source_tags ?? []).map(cleanSourceLabel),
-    evidence_items: block.evidence_items.map((item) => ({
-      ...item,
-      observation: cleanString(item.observation) || item.observation,
-      rule: cleanString(item.rule) || item.rule,
-      interpretation: cleanString(item.interpretation) || item.interpretation,
-      caveat: cleanString(item.caveat),
-      polarity: cleanString(item.polarity),
-      chart_context: cleanString(item.chart_context),
-    })),
+    evidence_items: block.evidence_items.map(sanitizeEvidenceItem),
   };
 }
 
@@ -136,6 +140,23 @@ export function sanitizeReadingResponse(result: AnyReadingResponse): AnyReadingR
       citations: cleanStringArray(dailyHoroscope.citations),
     } : result.daily_horoscope,
     notes: cleanStringArray(result.notes),
+    technical_summary: result.technical_summary ? {
+      ...result.technical_summary,
+      topic_judgments: result.technical_summary.topic_judgments?.map((topic) => ({
+        ...topic,
+        synthesis: cleanString(topic.synthesis),
+        validation_notes: cleanStringArray(topic.validation_notes),
+        evidence_items: topic.evidence_items.map(sanitizeEvidenceItem),
+        supporting_evidence: topic.supporting_evidence?.map(sanitizeEvidenceItem),
+        challenging_evidence: topic.challenging_evidence?.map(sanitizeEvidenceItem),
+        activating_evidence: topic.activating_evidence?.map(sanitizeEvidenceItem),
+      })),
+      year_map: result.technical_summary.year_map ? {
+        ...result.technical_summary.year_map,
+        fortune_spirit_axis: cleanString(result.technical_summary.year_map.fortune_spirit_axis),
+        annual_patterns: cleanStringArray(result.technical_summary.year_map.annual_patterns),
+      } : result.technical_summary.year_map,
+    } : result.technical_summary,
     source_lenses: result.source_lenses?.map((lens) => ({
       ...lens,
       labels: lens.labels.map(cleanSourceLabel),

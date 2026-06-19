@@ -221,6 +221,11 @@ class TopicJudgmentRecord(BaseModel):
     relevant_houses: List[int] = Field(default_factory=list)
     relevant_lot: Optional[str] = None
     evidence_items: List[EvidenceItem] = Field(default_factory=list)
+    supporting_evidence: List[EvidenceItem] = Field(default_factory=list)
+    challenging_evidence: List[EvidenceItem] = Field(default_factory=list)
+    activating_evidence: List[EvidenceItem] = Field(default_factory=list)
+    synthesis: Optional[str] = None
+    validation_notes: List[str] = Field(default_factory=list)
     citations: List[str] = Field(default_factory=list)
 
 
@@ -239,6 +244,8 @@ class YearMapRecord(BaseModel):
     fortune_emphasis: Optional[str] = None
     spirit_emphasis: Optional[str] = None
     fortune_spirit_alignment: Optional[str] = None
+    fortune_spirit_axis: Optional[str] = None
+    annual_patterns: List[str] = Field(default_factory=list)
     guidance: Optional[str] = None
 
 

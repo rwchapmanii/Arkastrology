@@ -136,6 +136,17 @@ class TransitForecastService:
     def _find_angle(chart_data: NatalTechnicalChart, name: str):
         return next((angle for angle in chart_data.angles if angle.id == name), None)
 
+    @classmethod
+    def _ruled_house_topics(cls, ontology: Dict, house_numbers: List[int]) -> List[str]:
+        topics: List[str] = []
+        for house_number in house_numbers:
+            topics.extend(cls._house_lived_topics(ontology, f"House{house_number}")[:2])
+        deduped: List[str] = []
+        for topic in topics:
+            if topic not in deduped:
+                deduped.append(topic)
+        return deduped[:4]
+
     @staticmethod
     def _display_body_name(name: str) -> str:
         return {
@@ -710,9 +721,15 @@ class TransitForecastService:
             fortune_line = f" {year_map.fortune_emphasis}"
         if year_map.spirit_emphasis:
             fortune_line += f" {year_map.spirit_emphasis}"
+        pattern_line = ""
+        if year_map.annual_patterns:
+            pattern_line = " " + " ".join(year_map.annual_patterns[:2])
+        axis_line = ""
+        if year_map.fortune_spirit_axis and year_map.fortune_spirit_alignment == "split":
+            axis_line = f" Fortune and Spirit are split across the {year_map.fortune_spirit_axis} axis, so public and private demands may not move in lockstep."
         return (
             f"Your annual profection keeps returning you to {activated_topics}. "
-            f"That means today's event is not random; it is touching the same yearly storyline from the angle of {house_title.lower()}.{lord_line}{fortune_line}"
+            f"That means today's event is not random; it is touching the same yearly storyline from the angle of {house_title.lower()}.{lord_line}{pattern_line}{fortune_line}{axis_line}"
         ).strip()
 
     @classmethod
@@ -899,13 +916,39 @@ class TransitForecastService:
         return "This influence is live today, so respond to it in real time instead of reading it only in retrospect."
 
     @classmethod
-    def _transit_line(cls, contact: TransitAspectRecord, ontology: Dict) -> str:
+    def _transit_line(
+        cls,
+        contact: TransitAspectRecord,
+        ontology: Dict,
+        chart_data: Optional[NatalTechnicalChart] = None,
+        year_map: Optional[YearMapRecord] = None,
+    ) -> str:
         natal_house = cls._house_title(ontology, contact.natal_house)
         lived_topics = cls._topic_phrase(cls._house_lived_topics(ontology, contact.natal_house or contact.transit_house), 4)
+        natal_planet = cls._find_planet(chart_data, contact.natal_body) if chart_data else None
+        ruled_houses = natal_planet.rules_houses[:2] if natal_planet and natal_planet.rules_houses else []
+        ruled_topics = cls._topic_phrase(cls._ruled_house_topics(ontology, ruled_houses), 4) if ruled_houses else None
+        time_scale = {
+            "Moon": "hours",
+            "Sun": "days",
+            "Mercury": "days",
+            "Venus": "days",
+            "Mars": "days to weeks",
+            "Jupiter": "weeks to months",
+            "Saturn": "weeks to months",
+        }.get(contact.transit_body, "days")
         phase_bits = [contact.phase or None, f"orb {contact.orb:.1f}°"]
+        annual_bits: List[str] = []
+        if year_map and year_map.activated_house and contact.natal_house:
+            if contact.natal_house == f"House{year_map.activated_house}":
+                annual_bits.append("directly tied to the activated profection house")
+            elif ruled_houses and year_map.activated_house in ruled_houses:
+                annual_bits.append("relevant because the natal planet rules the activated house")
         return (
             f"{contact.transit_body} {contact.type.lower()} {cls._display_body_name(contact.natal_body)}"
-            f" in {natal_house.lower()} — {lived_topics} ({' • '.join(bit for bit in phase_bits if bit)})"
+            f" in {natal_house.lower()} — {lived_topics}"
+            + (f"; it also routes through {ruled_topics}" if ruled_topics else "")
+            + f" ({' • '.join(bit for bit in [*phase_bits, f'scale {time_scale}', *annual_bits] if bit)})"
         )
 
     @classmethod
@@ -977,7 +1020,7 @@ class TransitForecastService:
                     "Name what the year keeps trying to teach you, then act in that direction once today.",
                 ],
                 "timing": "The current sky is relatively quiet, so timing favors steadiness, cleanup, and integration more than dramatic escalation.",
-                "active_transits": [cls._transit_line(contact, ontology) for contact in contacts[:3]],
+                "active_transits": [cls._transit_line(contact, ontology, chart_data, year_map) for contact in contacts[:3]],
                 "citations": cls._resolve_labels(["traditional_annual_profection", "traditional_solar_return", "traditional_fortune_spirit"]),
             }
             scores = cls._score_daily_horoscope(payload)
@@ -1075,7 +1118,7 @@ class TransitForecastService:
             best_move_supporting.append("Choose one action that produces a visible result rather than a symbolic gesture.")
 
         timing = cls._nonfatalistic(cls._timing_sentence(top_contact, transit_timezone))
-        active_transits = [cls._transit_line(contact, ontology) for contact in contacts[:5]]
+        active_transits = [cls._transit_line(contact, ontology, chart_data, year_map) for contact in contacts[:5]]
         citation_ids = {
             *top_threshold.get("source_lens_tags", []),
             *top_rite.get("source_lens_tags", []),

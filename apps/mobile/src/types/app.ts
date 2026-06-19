@@ -244,6 +244,11 @@ export type TopicJudgmentRecord = {
   relevant_houses: number[];
   relevant_lot?: string | null;
   evidence_items: EvidenceItem[];
+  supporting_evidence?: EvidenceItem[];
+  challenging_evidence?: EvidenceItem[];
+  activating_evidence?: EvidenceItem[];
+  synthesis?: string | null;
+  validation_notes?: string[];
   citations: string[];
 };
 
@@ -262,6 +267,8 @@ export type YearMapRecord = {
   fortune_emphasis?: string | null;
   spirit_emphasis?: string | null;
   fortune_spirit_alignment?: string | null;
+  fortune_spirit_axis?: string | null;
+  annual_patterns?: string[];
   guidance?: string | null;
 };
 

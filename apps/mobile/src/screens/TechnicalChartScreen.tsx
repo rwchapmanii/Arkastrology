@@ -67,6 +67,8 @@ function YearMapCard({ yearMap }: { yearMap?: YearMapRecord | null }) {
       {yearMap.fortune_emphasis ? <Text style={styles.dataValue}>{yearMap.fortune_emphasis}</Text> : null}
       {yearMap.spirit_emphasis ? <Text style={styles.dataValue}>{yearMap.spirit_emphasis}</Text> : null}
       {yearMap.fortune_spirit_alignment ? <Text style={styles.dataValue}>Fortune/Spirit alignment: {prettyText(yearMap.fortune_spirit_alignment)}</Text> : null}
+      {yearMap.fortune_spirit_axis ? <Text style={styles.dataValue}>Axis: {yearMap.fortune_spirit_axis}</Text> : null}
+      {yearMap.annual_patterns?.length ? yearMap.annual_patterns.map((pattern) => <Text key={pattern} style={styles.muted}>• {pattern}</Text>) : null}
       {yearMap.guidance ? <Text style={styles.muted}>{yearMap.guidance}</Text> : null}
     </SurfaceCard>
   );
@@ -90,9 +92,15 @@ function TopicJudgmentCard({ topicJudgments, mode }: { topicJudgments: TopicJudg
             <Text style={styles.topicTitle}>{topic.title}</Text>
             <Text style={styles.dataValue}>Classification: {prettyText(topic.classification)} • confidence: {topic.confidence} • score: {topic.score}</Text>
             <Text style={styles.dataValue}>Houses: {topic.relevant_houses.map((house) => `H${house}`).join(', ')}{topic.relevant_lot ? ` • lot: ${topic.relevant_lot}` : ''}</Text>
-            {topic.evidence_items.slice(0, 3).map((item, index) => (
+            {topic.synthesis ? <Text style={styles.muted}>{topic.synthesis}</Text> : null}
+            {(topic.supporting_evidence?.length ? topic.supporting_evidence : topic.evidence_items).slice(0, 2).map((item, index) => (
               <Text key={`${topic.key}-evidence-${index}`} style={styles.muted}>
                 {index + 1}. {item.observation} {item.interpretation}
+              </Text>
+            ))}
+            {topic.challenging_evidence?.slice(0, 1).map((item, index) => (
+              <Text key={`${topic.key}-challenge-${index}`} style={styles.muted}>
+                Caution: {item.observation} {item.interpretation}
               </Text>
             ))}
           </View>
