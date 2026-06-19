@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   outer: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surface,
+    backgroundColor: '#FFF8EE',
     borderWidth: 1,
     borderColor: palette.borderStrong,
     shadowColor: '#000000',
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   frame: {
-    backgroundColor: palette.surfaceStrong,
+    backgroundColor: '#FFF2DE',
     borderWidth: 1,
     borderColor: palette.border,
     position: 'relative',
@@ -126,8 +126,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   nodeGold: {
-    backgroundColor: palette.ink,
-    borderColor: palette.ink,
+    backgroundColor: palette.brandGold,
+    borderColor: palette.brandGold,
   },
   nodeLight: {
     backgroundColor: palette.surface,

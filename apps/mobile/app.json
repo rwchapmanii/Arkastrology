@@ -3,21 +3,39 @@
     "name": "The Ark",
     "slug": "the-ark",
     "version": "0.1.0",
+    "scheme": "theark",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/brand/app-icon.png",
+    "splash": {
+      "image": "./assets/brand/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F7F1E7"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
+      "icon": "./assets/brand/app-icon.png",
       "bundleIdentifier": "com.chapman.theark"
     },
+    "description": "Mystical, practical astrology readings that teach the chart as they guide the day.",
     "android": {
-      "package": "com.chapman.theark"
+      "package": "com.chapman.theark",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/brand/adaptive-icon.png",
+        "backgroundColor": "#F7F1E7"
+      }
     },
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "favicon": "./assets/brand/favicon.png",
+      "name": "The Ark",
+      "shortName": "The Ark",
+      "themeColor": "#16322E",
+      "backgroundColor": "#F7F1E7"
     },
     "plugins": [
       "expo-secure-store"

@@ -3,6 +3,7 @@ import { Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View 
 import { Feather } from '@expo/vector-icons';
 import { BrandMark } from './src/components/BrandMark';
 import { PrimaryButton, SurfaceCard } from './src/components/common';
+import { brand } from './src/constants/brand';
 import { palette } from './src/constants/theme';
 import { useAccountProfile } from './src/hooks/useAccountProfile';
 import { useAuthSession } from './src/hooks/useAuthSession';
@@ -479,10 +480,10 @@ export default function App() {
             </View>
           ) : null}
           <BrandMark size={64} />
-          <Text style={[styles.eyebrow, screenMode === 'auth' && styles.heroAuthText]}>The Ark</Text>
+          <Text style={[styles.eyebrow, screenMode === 'auth' && styles.heroAuthText]}>{brand.name} {brand.emblem}</Text>
           <Text style={[styles.title, screenMode === 'auth' && styles.heroAuthText]}>Enter the chamber.</Text>
           <Text style={[styles.subtitle, screenMode === 'auth' && styles.heroAuthTextMuted]}>
-            Sign in or create an account to begin.
+            {brand.tagline}
           </Text>
         </View>
 

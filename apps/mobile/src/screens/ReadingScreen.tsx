@@ -338,7 +338,7 @@ export function ReadingScreen({
       <Text style={styles.eyebrow}>{result.chart_type === 'synastry' ? 'Relationship Reading' : 'Reading'}</Text>
       <Text style={styles.title}>Your year</Text>
       <Text style={styles.summaryLead}>{openingSummary.title}</Text>
-      {openingSummary.paragraphs.map((paragraph, index) => (
+      {openingSummary.paragraphs.filter((paragraph): paragraph is string => Boolean(paragraph)).map((paragraph, index) => (
         <GlossaryText key={`${index}-${paragraph.slice(0, 24)}`} text={paragraph} textStyle={styles.body} />
       ))}
       {openingSummary.testimony ? <Text style={styles.oracle}>{openingSummary.testimony}</Text> : null}

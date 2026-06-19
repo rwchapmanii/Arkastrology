@@ -105,7 +105,7 @@ export function ChartWheel({
       const firstLongitude = findLongitude(primaryChart, aspect.first);
       const secondLongitude = findLongitude(primaryChart, aspect.second);
       if (typeof firstLongitude !== 'number' || typeof secondLongitude !== 'number') return null;
-      return { aspect, style: aspectLineStyle(size, firstLongitude, secondLongitude, aspectRadius) };
+      return { aspect, style: aspectLineStyle(chartSize, firstLongitude, secondLongitude, aspectRadius) };
     })
     .filter((item): item is { aspect: AspectRecord; style: ReturnType<typeof aspectLineStyle> } => Boolean(item));
 

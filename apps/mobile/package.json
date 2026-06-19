@@ -6,7 +6,8 @@
   "scripts": {
     "start": "expo start",
     "web": "expo start --web",
-    "build:web": "expo export --platform web",
+    "generate:brand": "python3 ./scripts/generate_brand_assets.py",
+    "build:web": "python3 ./scripts/generate_brand_assets.py && expo export --platform web && node ./scripts/brand-web.mjs",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit"

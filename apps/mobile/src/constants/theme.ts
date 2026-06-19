@@ -10,6 +10,8 @@ export const palette = {
   input: '#FFF9F1',
   border: '#D8CFC0',
   borderStrong: '#B9AC98',
+  brandGold: '#C39A53',
+  brandGoldSoft: '#E7D0A6',
   danger: '#7B2F35',
   success: '#2E6B59',
   white: '#FFFFFF',
