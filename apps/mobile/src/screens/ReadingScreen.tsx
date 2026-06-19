@@ -1,6 +1,6 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { GlossaryText } from '../components/GlossaryText';
 import { ChartWheel } from '../components/ChartWheel';
 import { InterpretationCard } from '../components/InterpretationCard';
@@ -349,12 +349,19 @@ export function ReadingScreen({
   const chartMapCard = (
     <SurfaceCard title="Visual chart map" subtitle="The outer ring shows the natal chart. The inner ring shows the timing or live overlay. The center lines show major aspects.">
       <Text style={styles.chartHelper}>Use the chart to orient yourself first, then move through the reading in order.</Text>
-      <ChartWheel
-        title={result.chart_type === 'synastry' ? 'Relationship chart map' : 'Birth chart map'}
-        primaryChart={result.chart_type === 'synastry' ? result.technical_summary?.primary_chart_data : result.technical_summary?.chart_data}
-        secondaryChart={result.chart_type === 'synastry' ? result.technical_summary?.secondary_chart_data : result.technical_summary?.transit_chart_data}
-        compact
-      />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chartScrollContent}
+      >
+        <ChartWheel
+          title={result.chart_type === 'synastry' ? 'Relationship chart map' : 'Birth chart map'}
+          primaryChart={result.chart_type === 'synastry' ? result.technical_summary?.primary_chart_data : result.technical_summary?.chart_data}
+          secondaryChart={result.chart_type === 'synastry' ? result.technical_summary?.secondary_chart_data : result.technical_summary?.transit_chart_data}
+          compact
+          size={result.chart_type === 'natal' ? 572 : undefined}
+        />
+      </ScrollView>
       <SecondaryButton label="Open full chart details" onPress={onOpenTechnical} icon={<MaterialCommunityIcons name="chart-bubble" size={17} color={palette.ink} />} />
     </SurfaceCard>
   );
@@ -751,6 +758,7 @@ const styles = StyleSheet.create({
   contactList: { gap: 6 },
   contactLine: { fontSize: 12, lineHeight: 18, color: palette.muted },
   chartHelper: { fontSize: 14, lineHeight: 21, color: palette.muted },
+  chartScrollContent: { paddingHorizontal: 12, alignItems: 'center' },
   flowStack: { gap: 10 },
   flowText: { fontSize: 14, lineHeight: 22, color: palette.ink },
   flowIndex: { color: palette.accent, fontWeight: '700' },

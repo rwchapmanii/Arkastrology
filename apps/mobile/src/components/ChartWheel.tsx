@@ -57,19 +57,46 @@ export function ChartWheel({
   primaryChart,
   secondaryChart,
   compact = false,
+  size,
   visibleAspectRecords,
 }: {
   title: string;
   primaryChart?: NatalTechnicalChart;
   secondaryChart?: NatalTechnicalChart;
   compact?: boolean;
+  size?: number;
   visibleAspectRecords?: AspectRecord[];
 }) {
-  const size = compact ? 286 : 332;
-  const center = size / 2;
-  const outerPlanetRadius = compact ? 106 : 126;
-  const innerPlanetRadius = compact ? 74 : 92;
-  const aspectRadius = compact ? 63 : 82;
+  const baseSize = compact ? 286 : 332;
+  const chartSize = size ?? baseSize;
+  const scale = chartSize / baseSize;
+  const center = chartSize / 2;
+  const outerPlanetRadius = (compact ? 106 : 126) * scale;
+  const innerPlanetRadius = (compact ? 74 : 92) * scale;
+  const aspectRadius = (compact ? 63 : 82) * scale;
+  const middleInset = (compact ? 20 : 20) * scale;
+  const innerInset = (compact ? 56 : 56) * scale;
+  const signRadius = (compact ? 128 : 148) * scale;
+  const segmentLength = (compact ? 141 : 164) * scale;
+  const angleRadius = (compact ? 122 : 142) * scale;
+  const primaryBubbleSize = 26 * scale;
+  const secondaryBubbleSize = 22 * scale;
+  const primaryBubbleOffset = primaryBubbleSize / 2;
+  const secondaryBubbleOffset = secondaryBubbleSize / 2;
+  const primaryFontSize = 13 * scale;
+  const secondaryFontSize = 11 * scale;
+  const angleBadgeOffsetX = 16 * scale;
+  const angleBadgeOffsetY = 10 * scale;
+  const angleTextSize = 9 * scale;
+  const signOffsetX = 8 * scale;
+  const signOffsetY = 10 * scale;
+  const signFontSize = 17 * scale;
+  const centerLabelWidth = (compact ? 116 : 128) * scale;
+  const centerTranslateX = (compact ? -58 : -64) * scale;
+  const centerTranslateY = (compact ? -30 : -32) * scale;
+  const centerLabelFontSize = 11 * scale;
+  const centerValueFontSize = 15 * scale;
+  const centerSubvalueFontSize = 12 * scale;
 
   if (!primaryChart) return null;
 
@@ -85,26 +112,26 @@ export function ChartWheel({
   return (
     <View style={styles.wrap}>
       <Text style={styles.title}>{title}</Text>
-      <View style={[styles.wheel, { width: size, height: size, borderRadius: size / 2 }]}>
-        <View style={[styles.middleRing, { width: size - 40, height: size - 40, borderRadius: (size - 40) / 2, left: 20, top: 20 }]} />
-        <View style={[styles.innerRing, { width: size - 112, height: size - 112, borderRadius: (size - 112) / 2, left: 56, top: 56 }]} />
+      <View style={[styles.wheel, { width: chartSize, height: chartSize, borderRadius: chartSize / 2 }]}>
+        <View style={[styles.middleRing, { width: chartSize - (middleInset * 2), height: chartSize - (middleInset * 2), borderRadius: (chartSize - (middleInset * 2)) / 2, left: middleInset, top: middleInset }]} />
+        <View style={[styles.innerRing, { width: chartSize - (innerInset * 2), height: chartSize - (innerInset * 2), borderRadius: (chartSize - (innerInset * 2)) / 2, left: innerInset, top: innerInset }]} />
 
         {Array.from({ length: 12 }).map((_, index) => {
           const angle = index * 30;
-          const signPos = polarToCartesian(angle + 15, compact ? 128 : 148);
+          const signPos = polarToCartesian(angle + 15, signRadius);
           return (
             <React.Fragment key={`segment-${index}`}>
-              <View style={[styles.segmentLine, angleLineStyle(center, angle, compact ? 141 : 164)]} />
-              <Text style={[styles.sign, { left: center + signPos.x - 8, top: center + signPos.y - 10 }]}>{SIGN_GLYPHS[index]}</Text>
+              <View style={[styles.segmentLine, angleLineStyle(center, angle, segmentLength)]} />
+              <Text style={[styles.sign, { left: center + signPos.x - signOffsetX, top: center + signPos.y - signOffsetY, fontSize: signFontSize }]}>{SIGN_GLYPHS[index]}</Text>
             </React.Fragment>
           );
         })}
 
         {primaryChart.angles.map((angle) => {
-          const pos = polarToCartesian(angle.longitude, compact ? 122 : 142);
+          const pos = polarToCartesian(angle.longitude, angleRadius);
           return (
-            <View key={`angle-${angle.id}`} style={[styles.angleBadge, { left: center + pos.x - 16, top: center + pos.y - 10 }]}>
-              <Text style={styles.angleText}>{planetGlyph(angle.id)}</Text>
+            <View key={`angle-${angle.id}`} style={[styles.angleBadge, { left: center + pos.x - angleBadgeOffsetX, top: center + pos.y - angleBadgeOffsetY, paddingHorizontal: 5 * scale, paddingVertical: 2 * scale }]}>
+              <Text style={[styles.angleText, { fontSize: angleTextSize }]}>{planetGlyph(angle.id)}</Text>
             </View>
           );
         })}
@@ -116,8 +143,8 @@ export function ChartWheel({
         {primaryChart.planets.map((planet) => {
           const pos = polarToCartesian(planet.longitude, outerPlanetRadius);
           return (
-            <View key={`primary-${planet.id}`} style={[styles.planetBubblePrimary, { left: center + pos.x - 13, top: center + pos.y - 13 }]}>
-              <Text style={styles.planetTextPrimary}>{planetGlyph(planet.id)}</Text>
+            <View key={`primary-${planet.id}`} style={[styles.planetBubblePrimary, { width: primaryBubbleSize, height: primaryBubbleSize, borderRadius: primaryBubbleSize / 2, left: center + pos.x - primaryBubbleOffset, top: center + pos.y - primaryBubbleOffset }]}>
+              <Text style={[styles.planetTextPrimary, { fontSize: primaryFontSize }]}>{planetGlyph(planet.id)}</Text>
             </View>
           );
         })}
@@ -125,16 +152,16 @@ export function ChartWheel({
         {secondaryChart?.planets.map((planet) => {
           const pos = polarToCartesian(planet.longitude, innerPlanetRadius);
           return (
-            <View key={`secondary-${planet.id}`} style={[styles.planetBubbleSecondary, { left: center + pos.x - 11, top: center + pos.y - 11 }]}>
-              <Text style={styles.planetTextSecondary}>{planetGlyph(planet.id)}</Text>
+            <View key={`secondary-${planet.id}`} style={[styles.planetBubbleSecondary, { width: secondaryBubbleSize, height: secondaryBubbleSize, borderRadius: secondaryBubbleSize / 2, left: center + pos.x - secondaryBubbleOffset, top: center + pos.y - secondaryBubbleOffset }]}>
+              <Text style={[styles.planetTextSecondary, { fontSize: secondaryFontSize }]}>{planetGlyph(planet.id)}</Text>
             </View>
           );
         })}
 
-        <View style={[styles.centerLabelWrap, compact && styles.centerLabelWrapCompact]}>
-          <Text style={styles.centerLabel}>{primaryChart.house_system}</Text>
-          <Text style={styles.centerValue}>{secondaryChart ? 'A / B overlay' : 'Aspect web'}</Text>
-          <Text style={styles.centerSubvalue}>{primaryChart.planets.length} planets • {(visibleAspectRecords ?? primaryChart.aspects).length} aspects</Text>
+        <View style={[styles.centerLabelWrap, { width: centerLabelWidth, transform: [{ translateX: centerTranslateX }, { translateY: centerTranslateY }] }]}>
+          <Text style={[styles.centerLabel, { fontSize: centerLabelFontSize }]}>{primaryChart.house_system}</Text>
+          <Text style={[styles.centerValue, { fontSize: centerValueFontSize }]}>{secondaryChart ? 'A / B overlay' : 'Aspect web'}</Text>
+          <Text style={[styles.centerSubvalue, { fontSize: centerSubvalueFontSize }]}>{primaryChart.planets.length} planets • {(visibleAspectRecords ?? primaryChart.aspects).length} aspects</Text>
         </View>
       </View>
       <View style={styles.legendRow}>
@@ -223,14 +250,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: '50%',
     top: '50%',
-    transform: [{ translateX: -64 }, { translateY: -32 }],
     alignItems: 'center',
-    width: 128,
     gap: 2,
-  },
-  centerLabelWrapCompact: {
-    transform: [{ translateX: -58 }, { translateY: -30 }],
-    width: 116,
   },
   centerLabel: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.1, color: palette.muted, fontWeight: '700', textAlign: 'center' },
   centerValue: { fontSize: 15, color: palette.ink, fontWeight: '700', textAlign: 'center' },
