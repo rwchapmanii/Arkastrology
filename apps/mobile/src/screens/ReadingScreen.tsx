@@ -366,6 +366,14 @@ export function ReadingScreen({
     </SurfaceCard>
   );
 
+  const renderHoroscopeList = (items: string[], prefix = '•') => (
+    <View style={styles.flowStack}>
+      {items.map((line) => (
+        <Text key={`${prefix}-${line}`} style={styles.flowText}>{prefix} {line}</Text>
+      ))}
+    </View>
+  );
+
   const dailyHoroscopeCard = dailyHoroscope ? (
     <SurfaceCard title={dailyHoroscope.title} subtitle={dailyHoroscope.date} accent>
       <View style={styles.horoscopeHeader}>
@@ -374,32 +382,67 @@ export function ReadingScreen({
           <Text style={styles.horoscopeSources}>{dailyHoroscope.citations.slice(0, 3).join(' • ')}</Text>
         ) : null}
       </View>
-      <View style={styles.flowStack}>
-        <GlossaryText text={dailyHoroscope.overview} textStyle={styles.body} />
-        <GlossaryText text={dailyHoroscope.focus} textStyle={styles.body} />
-      </View>
+      {dailyHoroscope.main_transit ? (
+        <View style={styles.horoscopePanel}>
+          <Text style={styles.sectionLabel}>Main Transit</Text>
+          <GlossaryText text={dailyHoroscope.main_transit} textStyle={styles.panelText} />
+        </View>
+      ) : null}
+      {dailyHoroscope.day_thesis ? (
+        <View style={styles.horoscopePanel}>
+          <Text style={styles.sectionLabel}>The Day In One Sentence</Text>
+          <GlossaryText text={dailyHoroscope.day_thesis} textStyle={styles.panelText} />
+        </View>
+      ) : null}
+      {dailyHoroscope.what_this_means?.length ? (
+        <View style={styles.horoscopePanel}>
+          <Text style={styles.sectionLabel}>What This Means</Text>
+          {renderHoroscopeList(dailyHoroscope.what_this_means)}
+        </View>
+      ) : null}
+      {dailyHoroscope.why_the_chart_says_this?.length ? (
+        <View style={styles.horoscopePanel}>
+          <Text style={styles.sectionLabel}>Why The Chart Says This</Text>
+          {renderHoroscopeList(dailyHoroscope.why_the_chart_says_this)}
+        </View>
+      ) : null}
+      {dailyHoroscope.larger_story ? (
+        <View style={styles.horoscopePanel}>
+          <Text style={styles.sectionLabel}>The Larger Story</Text>
+          <GlossaryText text={dailyHoroscope.larger_story} textStyle={styles.panelText} />
+        </View>
+      ) : null}
       <View style={styles.horoscopeGrid}>
-        <View style={styles.horoscopePanel}>
-          <Text style={styles.sectionLabel}>Opportunity</Text>
-          <GlossaryText text={dailyHoroscope.opportunity} textStyle={styles.panelText} />
-        </View>
-        <View style={styles.horoscopePanel}>
-          <Text style={styles.sectionLabel}>Watch for</Text>
-          <GlossaryText text={dailyHoroscope.caution} textStyle={styles.panelText} />
-        </View>
+        {dailyHoroscope.opportunities?.length ? (
+          <View style={styles.horoscopePanel}>
+            <Text style={styles.sectionLabel}>Opportunity</Text>
+            {renderHoroscopeList(dailyHoroscope.opportunities)}
+          </View>
+        ) : null}
+        {dailyHoroscope.watch_fors?.length ? (
+          <View style={styles.horoscopePanel}>
+            <Text style={styles.sectionLabel}>Watch For</Text>
+            {renderHoroscopeList(dailyHoroscope.watch_fors)}
+          </View>
+        ) : null}
       </View>
       <View style={styles.horoscopeActionCard}>
         <Text style={styles.sectionLabel}>Best move today</Text>
-        <GlossaryText text={dailyHoroscope.action} textStyle={styles.body} />
+        {dailyHoroscope.best_move_primary ? <GlossaryText text={`Primary action: ${dailyHoroscope.best_move_primary}`} textStyle={styles.body} /> : null}
+        {dailyHoroscope.best_move_supporting?.length ? renderHoroscopeList(dailyHoroscope.best_move_supporting, '•') : null}
         <Text style={styles.sectionLabel}>Timing</Text>
         <GlossaryText text={dailyHoroscope.timing} textStyle={styles.supporting} />
       </View>
       {dailyHoroscope.active_transits?.length ? (
         <View style={styles.drawerSection}>
           <Text style={styles.sectionLabel}>Active transits</Text>
-          {dailyHoroscope.active_transits.map((line) => (
-            <Text key={line} style={styles.flowText}>• {line}</Text>
-          ))}
+          {renderHoroscopeList(dailyHoroscope.active_transits)}
+        </View>
+      ) : null}
+      {dailyHoroscope.action_checklist?.length ? (
+        <View style={styles.drawerSection}>
+          <Text style={styles.sectionLabel}>Action Checklist</Text>
+          {renderHoroscopeList(dailyHoroscope.action_checklist, '□')}
         </View>
       ) : null}
     </SurfaceCard>

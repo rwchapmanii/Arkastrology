@@ -78,6 +78,17 @@ function sanitizeBlock(block: InterpretationBlock): InterpretationBlock {
 export function sanitizeReadingResponse(result: AnyReadingResponse): AnyReadingResponse {
   const sanitizedPsychological = cleanString(result.reading.psychological_meaning) || result.reading.psychological_meaning;
   const sanitizedLifeTranslation = cleanString(result.reading.life_translation) || result.reading.life_translation || sanitizedPsychological;
+  const dailyHoroscope = result.daily_horoscope as (typeof result.daily_horoscope & {
+    overview?: string | null;
+    focus?: string | null;
+    opportunity?: string | null;
+    caution?: string | null;
+    action?: string | null;
+  }) | null;
+  const whatThisMeans = cleanStringArray(dailyHoroscope?.what_this_means);
+  const opportunities = cleanStringArray(dailyHoroscope?.opportunities);
+  const watchFors = cleanStringArray(dailyHoroscope?.watch_fors);
+  const actionChecklist = cleanStringArray(dailyHoroscope?.action_checklist);
   return {
     ...result,
     reading: {
@@ -92,19 +103,35 @@ export function sanitizeReadingResponse(result: AnyReadingResponse): AnyReadingR
       ritual_focus: cleanString(result.reading.ritual_focus),
       oracle: cleanString(result.reading.oracle),
     },
-    daily_horoscope: result.daily_horoscope ? {
-      ...result.daily_horoscope,
-      title: cleanString(result.daily_horoscope.title) || result.daily_horoscope.title,
-      date: cleanString(result.daily_horoscope.date) || result.daily_horoscope.date,
-      headline: cleanString(result.daily_horoscope.headline) || result.daily_horoscope.headline,
-      overview: cleanString(result.daily_horoscope.overview) || result.daily_horoscope.overview,
-      focus: cleanString(result.daily_horoscope.focus) || result.daily_horoscope.focus,
-      opportunity: cleanString(result.daily_horoscope.opportunity) || result.daily_horoscope.opportunity,
-      caution: cleanString(result.daily_horoscope.caution) || result.daily_horoscope.caution,
-      action: cleanString(result.daily_horoscope.action) || result.daily_horoscope.action,
-      timing: cleanString(result.daily_horoscope.timing) || result.daily_horoscope.timing,
-      active_transits: cleanStringArray(result.daily_horoscope.active_transits),
-      citations: cleanStringArray(result.daily_horoscope.citations),
+    daily_horoscope: dailyHoroscope ? {
+      ...dailyHoroscope,
+      title: cleanString(dailyHoroscope.title) || dailyHoroscope.title,
+      date: cleanString(dailyHoroscope.date) || dailyHoroscope.date,
+      headline: cleanString(dailyHoroscope.headline) || dailyHoroscope.headline,
+      main_transit: cleanString(dailyHoroscope.main_transit) || cleanString(dailyHoroscope.overview) || dailyHoroscope.main_transit,
+      day_thesis: cleanString(dailyHoroscope.day_thesis) || cleanString(dailyHoroscope.focus) || dailyHoroscope.day_thesis,
+      what_this_means: whatThisMeans.length ? whatThisMeans : [
+        cleanString(dailyHoroscope.overview),
+        cleanString(dailyHoroscope.focus),
+      ].filter((value): value is string => Boolean(value)),
+      why_the_chart_says_this: cleanStringArray(dailyHoroscope.why_the_chart_says_this),
+      larger_story: cleanString(dailyHoroscope.larger_story),
+      opportunities: opportunities.length ? opportunities : [
+        cleanString(dailyHoroscope.opportunity),
+      ].filter((value): value is string => Boolean(value)),
+      watch_fors: watchFors.length ? watchFors : [
+        cleanString(dailyHoroscope.caution),
+      ].filter((value): value is string => Boolean(value)),
+      best_move_primary: cleanString(dailyHoroscope.best_move_primary) || cleanString(dailyHoroscope.action) || dailyHoroscope.best_move_primary,
+      best_move_supporting: cleanStringArray(dailyHoroscope.best_move_supporting),
+      timing: cleanString(dailyHoroscope.timing) || dailyHoroscope.timing,
+      active_transits: cleanStringArray(dailyHoroscope.active_transits),
+      action_checklist: actionChecklist.length ? actionChecklist : [
+        cleanString(dailyHoroscope.action),
+        cleanString(dailyHoroscope.opportunity),
+        cleanString(dailyHoroscope.caution),
+      ].filter((value): value is string => Boolean(value)),
+      citations: cleanStringArray(dailyHoroscope.citations),
     } : result.daily_horoscope,
     notes: cleanStringArray(result.notes),
     source_lenses: result.source_lenses?.map((lens) => ({

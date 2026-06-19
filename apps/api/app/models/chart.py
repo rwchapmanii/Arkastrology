@@ -325,13 +325,18 @@ class DailyHoroscope(BaseModel):
     title: str
     date: str
     headline: str
-    overview: str
-    focus: str
-    opportunity: str
-    caution: str
-    action: str
+    main_transit: Optional[str] = None
+    day_thesis: Optional[str] = None
+    what_this_means: List[str] = Field(default_factory=list)
+    why_the_chart_says_this: List[str] = Field(default_factory=list)
+    larger_story: Optional[str] = None
+    opportunities: List[str] = Field(default_factory=list)
+    watch_fors: List[str] = Field(default_factory=list)
+    best_move_primary: Optional[str] = None
+    best_move_supporting: List[str] = Field(default_factory=list)
     timing: str
     active_transits: List[str] = Field(default_factory=list)
+    action_checklist: List[str] = Field(default_factory=list)
     citations: List[str] = Field(default_factory=list)
 
 

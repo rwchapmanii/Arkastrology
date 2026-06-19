@@ -176,6 +176,7 @@ class NatalReadingService:
                         transit_timestamp=transit_timestamp,
                         transit_timezone=transit_timezone,
                         ontology=ontology,
+                        chart_data=chart_data,
                     )
                     reading = NatalInterpretationService.build_planetary_fallback_reading_section(
                         chart_data=chart_data,
@@ -283,6 +284,7 @@ class NatalReadingService:
                     ontology=ontology,
                     year_map=year_map,
                     topic_judgments=topic_judgments,
+                    chart_data=chart_data,
                 )
                 reading = NatalInterpretationService.build_reading_section(
                     chart_data=chart_data,

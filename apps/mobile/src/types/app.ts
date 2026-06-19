@@ -30,13 +30,18 @@ export type DailyHoroscope = {
   title: string;
   date: string;
   headline: string;
-  overview: string;
-  focus: string;
-  opportunity: string;
-  caution: string;
-  action: string;
+  main_transit?: string | null;
+  day_thesis?: string | null;
+  what_this_means: string[];
+  why_the_chart_says_this: string[];
+  larger_story?: string | null;
+  opportunities: string[];
+  watch_fors: string[];
+  best_move_primary?: string | null;
+  best_move_supporting: string[];
   timing: string;
   active_transits: string[];
+  action_checklist: string[];
   citations: string[];
 };
 
