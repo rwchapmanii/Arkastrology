@@ -42,6 +42,18 @@ function getBaseUrlCandidates(baseUrl: string) {
   return candidates;
 }
 
+function shouldRetryWithFallback(baseUrl: string, response: Response, hasFallback: boolean) {
+  if (!hasFallback) {
+    return false;
+  }
+
+  if (baseUrl !== 'https://api.arkastrology.app') {
+    return false;
+  }
+
+  return response.status === 404 || response.status >= 500;
+}
+
 async function readError(response: Response) {
   try {
     const data = (await response.json()) as { detail?: string };
@@ -54,15 +66,16 @@ async function readError(response: Response) {
 async function requestJson<T>(baseUrl: string, path: string, init: RequestInit = {}) {
   const candidates = getBaseUrlCandidates(baseUrl);
   let lastNetworkError: string | null = null;
+  let lastHttpError: string | null = null;
 
   for (let index = 0; index < candidates.length; index += 1) {
     const candidate = candidates[index];
+    const hasFallback = index < candidates.length - 1;
     let response: Response;
     try {
       response = await fetch(`${candidate}${path}`, init);
     } catch (error) {
       lastNetworkError = error instanceof Error && error.message ? error.message : 'Network request failed.';
-      const hasFallback = index < candidates.length - 1;
       if (hasFallback) {
         continue;
       }
@@ -70,13 +83,17 @@ async function requestJson<T>(baseUrl: string, path: string, init: RequestInit =
     }
 
     if (!response.ok) {
-      throw new Error(await readError(response));
+      lastHttpError = await readError(response);
+      if (shouldRetryWithFallback(candidate, response, hasFallback)) {
+        continue;
+      }
+      throw new Error(lastHttpError);
     }
 
     return (await response.json()) as T;
   }
 
-  throw new Error(lastNetworkError || 'Could not reach The Ark API.');
+  throw new Error(lastHttpError || lastNetworkError || 'Could not reach The Ark API.');
 }
 
 function buildPersonPayload(person: PersonDraft) {
